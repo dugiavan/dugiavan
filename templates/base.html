@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>2026 - DuGiaVan</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --accent-gold: #f1c40f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(-45deg, #4a148c, #880e4f, #1a1a2e, #0d0d2b, #1a2a6c, #b21f1f, #fdbb2d, #1a2a6c);
+            background-size: 600% 600%;
+            animation: gradientBG 20s ease infinite;
+
+            /* SỬA 2 DÒNG DƯỚI ĐÂY */
+            min-height: 100vh;
+            /* Thay height thành min-height để nó tự dài ra theo nội dung */
+            overflow-x: hidden;
+            /* Chỉ cấm cuộn ngang */
+            overflow-y: auto;
+            /* Cho phép cuộn dọc khi nội dung dài */
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        #stars-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .content-wrapper {
+            text-align: center;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Style cho số nhảy và chữ */
+        .journey-text {
+            font-size: 1.2rem;
+            color: var(--accent-gold);
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-bottom: -10px;
+        }
+
+        .center-number {
+            font-weight: 900;
+            font-size: clamp(5rem, 20vw, 12rem);
+            color: var(--accent-gold);
+            user-select: none;
+            letter-spacing: -2px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .morph-container {
+            display: inline-block;
+            height: 1em;
+            overflow: hidden;
+            position: relative;
+            padding-right: 25px;
+            margin-left: -5px;
+        }
+
+        .morph-list {
+            display: flex;
+            flex-direction: column;
+            transition: transform 6s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .morph-list.active {
+            transform: translateY(-50%);
+        }
+
+        .digit {
+            height: 1em;
+            line-height: 1em;
+            text-align: left;
+            padding-left: 5px;
+        }
+
+        .sub-description {
+            font-family: 'Montserrat', sans-serif;
+            /* Đổi font sang Montserrat */
+            font-weight: 300;
+            /* Nét mảnh cho sang */
+            text-transform: uppercase;
+            /* Viết hoa toàn bộ */
+            letter-spacing: 5px;
+            /* Giãn chữ ra thật rộng */
+            font-size: 0.8rem;
+            /* Nhỏ lại một chút */
+            margin-top: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            /* Làm mờ đi một tí */
+        }
+
+        /* Menu xịn ở góc phải */
+        nav {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+
+        nav a {
+            color: var(--accent-gold);
+            text-decoration: none;
+            font-weight: bold;
+            border: 1px solid rgba(241, 196, 15, 0.4);
+            padding: 8px 18px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            transition: 0.3s;
+            font-size: 0.85rem;
+        }
+
+        nav a:hover {
+            background: var(--accent-gold);
+            color: #1a1a2e;
+            box-shadow: 0 0 15px var(--accent-gold);
+            transform: translateY(-2px);
+        }
+
+        .explore-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 30px;
+            color: var(--accent-gold);
+            text-decoration: none;
+            font-weight: bold;
+            border: 2px solid var(--accent-gold);
+            border-radius: 30px;
+            background: transparent;
+            transition: all 0.4s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .explore-btn:hover {
+            background: var(--accent-gold);
+            color: #1a1a2e;
+            box-shadow: 0 0 25px var(--accent-gold);
+            transform: scale(1.05);
+        }
+
+        /* Tạo tia sáng chạy qua nút */
+        .explore-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -100%;
+            width: 40%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: rotate(30deg);
+            transition: none;
+            animation: shine-effect 4s infinite;
+            /* Cứ 4 giây tia sáng chạy qua 1 lần */
+        }
+
+        @keyframes shine-effect {
+            0% {
+                left: -100%;
+            }
+
+            20% {
+                left: 150%;
+            }
+
+            100% {
+                left: 150%;
+            }
+        }
+
+        /* PHẢI NẰM NGOÀI NHƯ VẦY NÈ */
+        #globe-container {
+            position: fixed;
+            bottom: -400px;
+            /* Đẩy xuống sâu hơn để chỉ hiện đúng 1/2 */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            opacity: 1;
+            /* Tăng độ đậm lên cho sáng */
+            pointer-events: none;
+        }
+    </style>
+    <script src="//unpkg.com/globe.gl"></script>
+</head>
+
+<body>
+    <canvas id="stars-canvas"></canvas>
+    <div id="globe-container"></div>
+
+    <div class="content-wrapper">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        const canvas = document.getElementById('stars-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = []; let shootingStars = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        class Star {
+            constructor() { this.reset(); }
+            reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.size = Math.random() * 2; this.speed = Math.random() * 0.5 + 0.2; this.opacity = Math.random(); }
+            update() { this.y -= this.speed; if (this.y < 0) this.reset(); }
+            draw() { ctx.fillStyle = `rgba(241, 196, 15, ${this.opacity})`; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+        }
+
+        class ShootingStar {
+            constructor() { this.reset(); }
+            reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * (canvas.height / 2); this.len = Math.random() * 80 + 50; this.speed = Math.random() * 15 + 2; this.active = false; setTimeout(() => { this.active = true; }, Math.random() * 8000); }
+            update() { if (!this.active) return; this.x -= this.speed; this.y += this.speed; if (this.x < -this.len || this.y > canvas.height + this.len) { this.active = false; this.reset(); } }
+            draw() { if (!this.active) return; ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x + this.len, this.y - this.len); ctx.stroke(); }
+        }
+
+        for (let i = 0; i < 300; i++) stars.push(new Star());
+        for (let i = 0; i < 2; i++) shootingStars.push(new ShootingStar());
+
+        function drawConstellations() {
+            const maxDistance = 100;
+            for (let i = 0; i < stars.length; i++) {
+                for (let j = i + 1; j < stars.length; j++) {
+                    let dx = stars[i].x - stars[j].x; let dy = stars[i].y - stars[j].y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < maxDistance) {
+                        ctx.strokeStyle = `rgba(241, 196, 15, ${0.15 * (1 - distance / maxDistance)})`;
+                        ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(stars[i].x, stars[i].y); ctx.lineTo(stars[j].x, stars[j].y); ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() { ctx.clearRect(0, 0, canvas.width, canvas.height); drawConstellations(); stars.forEach(s => { s.update(); s.draw(); }); shootingStars.forEach(ss => { ss.update(); ss.draw(); }); requestAnimationFrame(animate); }
+
+        window.addEventListener('load', () => {
+            animate();
+            setTimeout(() => {
+                const ml = document.getElementById('morph-list');
+                if (ml) ml.classList.add('active');
+            }, 3000);
+        });
+        // KHỞI TẠO QUẢ CẦU 3D SÁNG RỰC
+        const globeElement = document.getElementById('globe-container');
+        const world = Globe()
+            (globeElement)
+            // Thay bằng ảnh địa hình sáng hơn
+            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+            .backgroundColor('rgba(0,0,0,0)')
+            .width(800)
+            .height(800)
+            .showAtmosphere(true)
+            .atmosphereColor('#f1c40f') // Hào quang vàng rực rỡ
+            .atmosphereAltitude(0.25)  // Làm hào quang dày hơn cho sáng
+            .pointColor(() => '#f1c40f'); // Nếu sau này thêm điểm dữ liệu sẽ có màu vàng
+
+        world.controls().autoRotate = true;
+        world.controls().autoRotateSpeed = 1.2; // Quay nhanh hơn tí cho sinh động
+        world.controls().enableZoom = false;
+    </script>
+</body>
+
+</html>

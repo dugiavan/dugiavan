@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title id="page-title">Ancient Tales</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Dancing+Script:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* GIỮ NGUYÊN TOÀN BỘ CSS CỦA BẠN */
+        :root {
+            --text-dark: #2c3e50;
+            --accent-gold: #f1c40f;
+            --royal-purple: #4a148c;
+            --drop-shadow: 0 15px 45px rgba(0, 0, 0, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Comfortaa', sans-serif;
+            background: linear-gradient(-45deg, #4a148c, #880e4f, #1a1a2e);
+            background-attachment: fixed;
+            color: white;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #stars-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            text-align: center;
+            padding: 15px 10px;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: clamp(1.8rem, 6vw, 3rem);
+            margin: 0;
+            color: var(--accent-gold);
+        }
+
+        .author-tag {
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            opacity: 0.9;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .story-title-vn {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        #story-selector,
+        #voice-select {
+            margin-top: 8px;
+            /* 1. Nền cực mỏng để nhìn xuyên thấu nhưng vẫn nổi chữ */
+            background: rgba(255, 255, 255, 0.05);
+            /* 2. Viền vàng mảnh sang trọng */
+            border: 1px solid rgba(241, 196, 15, 0.4);
+            color: var(--accent-gold);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            width: 90%;
+            max-width: 320px;
+
+            /* 3. Xử lý hiển thị */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            outline: none;
+            cursor: pointer;
+            text-align: center;
+
+            /* 4. Hiệu ứng kính làm nền sao mờ ảo phía sau */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+
+            /* 5. Thêm mũi tên nhỏ bên phải để người dùng biết là menu */
+            background-image: linear-gradient(45deg, transparent 50%, var(--accent-gold) 50%),
+                linear-gradient(135deg, var(--accent-gold) 50%, transparent 50%);
+            background-position: calc(100% - 20px) calc(1em + 2px),
+                calc(100% - 15px) calc(1em + 2px);
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
+        }
+
+        /* Quan trọng: Sửa màu cho các dòng Option bên trong */
+        #story-selector option,
+        #voice-select option {
+            /* Trình duyệt không cho phép option trong suốt hoàn toàn, 
+       nên ta dùng màu tối nhất của background để giả lập trong suốt */
+            background-color: #1a1a2e;
+            color: white;
+            padding: 10px;
+        }
+
+        /* Hiệu ứng khi nhấn vào */
+        #story-selector:focus,
+        #voice-select:focus {
+            border-color: var(--accent-gold);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .gallery-wrapper {
+            flex: 1;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: visible;
+        }
+
+        .gallery-container {
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            width: 100%;
+            height: 100%;
+            scrollbar-width: none;
+            cursor: grab;
+        }
+
+        .gallery-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .snap-spacer {
+            flex: 0 0 calc(50% - 150px);
+        }
+
+        .flashcard {
+            flex: 0 0 300px;
+            height: 450px;
+            margin: 0 30px;
+            perspective: 1000px;
+            scroll-snap-align: center;
+            scroll-snap-stop: always;
+            transition: all 0.6s ease;
+            opacity: 0.2;
+            transform: scale(0.8);
+            filter: blur(4px);
+        }
+
+        .flashcard.active {
+            opacity: 1;
+            transform: scale(1.05);
+            filter: blur(0);
+            z-index: 5;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front,
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 35px;
+            border-radius: 30px;
+            background: #ffffff;
+            border: 4px solid var(--accent-gold);
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background: #fdfdf5;
+        }
+
+        .type-tag {
+            position: absolute;
+            top: 25px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--royal-purple);
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        .english {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a237e;
+        }
+
+        .vietnamese {
+            font-size: 1.1rem;
+            color: #3e2723;
+            font-style: italic;
+        }
+
+        .audio-icon {
+            margin-top: 30px;
+            background: var(--accent-gold);
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .audio-icon svg {
+            width: 22px;
+            fill: var(--royal-purple);
+        }
+
+        .footer-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px 0;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(241, 196, 15, 0.15);
+            border: 1.5px solid var(--accent-gold);
+            color: var(--accent-gold);
+            cursor: pointer;
+        }
+
+        .counter {
+            background: rgba(241, 196, 15, 0.2);
+            border: 1px solid var(--accent-gold);
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .footer-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            opacity: 0.6;
+            padding-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="stars-canvas"></canvas>
+
+    <div class="header">
+        <div class="author-tag">Coded & Designed by DuGiaVăn</div>
+
+        <select id="story-selector" onchange="loadStory(this.value)">
+            <option value="snowWhite">Snow White (Bạch Tuyết)</option>
+            <option value="cinderella">Cinderella (Lọ Lem)</option>
+        </select>
+
+        <h1 id="main-title">Snow White</h1>
+        <div class="story-title-vn" id="sub-title">Bạch Tuyết và Bảy Chú Lùn</div>
+        <select id="voice-select"></select>
+    </div>
+
+    <div class="gallery-wrapper">
+        <div class="gallery-container" id="gallery">
+        </div>
+    </div>
+
+    <div class="footer-controls">
+        <button class="nav-btn prev" onclick="moveSlide(-1)">❮</button>
+        <div class="counter" id="card-counter">1 / 1</div>
+        <button class="nav-btn next" onclick="moveSlide(1)">❯</button>
+    </div>
+
+    <div class="footer-hint">✨ Vuốt ngang hoặc dùng nút để chuyển thẻ ✨</div>
+
+    <script>
+        // 1. DATABASE NHIỀU TRUYỆN
+        const allStories = {
+            snowWhite: {
+                titleEn: "Snow White",
+                titleVi: "Bạch Tuyết và Bảy Chú Lùn",
+                data: [
+                    // --- PHẦN 1: KHỞI ĐẦU VÀ LỜI ƯỚC ---
+                    { en: "In the middle of a cold winter, a Queen sat by a window of black ebony.", vi: "Giữa một mùa đông lạnh giá, một hoàng hậu ngồi bên cửa sổ làm bằng gỗ mun đen.", scene: "Khởi đầu" },
+                    { en: "She was sewing, and as she looked out at the falling snow, she pricked her finger.", vi: "Bà đang khâu vá, và khi đang nhìn ra ngoài trời tuyết rơi, bà vô tình đâm vào ngón tay.", scene: "Sự cố" },
+                    { en: "Three drops of crimson blood fell onto the white snow on the windowsill.", vi: "Ba giọt máu đỏ thẫm rơi trên nền tuyết trắng xóa trên bậu cửa sổ.", scene: "Dấu hiệu" },
+                    { en: "The contrast of red on white looked so beautiful that she sighed deeply.", vi: "Sự tương phản của màu đỏ trên nền trắng trông đẹp đến mức bà khẽ thở dài.", scene: "Cảm xúc" },
+                    { en: "'If only I had a child as white as snow, as red as blood, and as black as this ebony wood!'", vi: "'Giá mà ta có một đứa con trắng như tuyết, đỏ như máu và đen như màu gỗ mun này!'", scene: "Lời ước" },
+                    { en: "Soon after, her wish came true and she gave birth to a beautiful baby girl.", vi: "Chẳng bao lâu sau, tâm nguyện của bà thành hiện thực và bà hạ sinh một bé gái xinh đẹp.", scene: "Mãn nguyện" },
+                    { en: "The baby had skin like snow and hair like night, so they named her Snow White.", vi: "Đứa trẻ có làn da như tuyết và mái tóc như đêm đen, nên họ đặt tên nàng là Bạch Tuyết.", scene: "Đặt tên" },
+                    { en: "However, a dark cloud fell over the palace when the Queen died shortly after.", vi: "Tuy nhiên, một đám mây đen bao trùm cung điện khi hoàng hậu qua đời ngay sau đó.", scene: "Tang thương" },
+                    { en: "The King mourned for a year, but eventually, he decided to marry again.", vi: "Nhà vua để tang một năm, nhưng cuối cùng, ông quyết định đi bước nữa.", scene: "Tục huyền" },
+                    { en: "The new Queen was stunningly beautiful, but her heart was cold and full of pride.", vi: "Vị hoàng hậu mới đẹp lộng lẫy, nhưng trái tim bà ta lạnh lùng và đầy kiêu ngạo.", scene: "Mẹ kế" },
+
+                    // --- PHẦN 2: CHIẾC GƯƠNG THẦN VÀ SỰ GHEN TỊ ---
+                    { en: "She possessed a magical mirror that could never tell a lie.", vi: "Bà ta sở hữu một chiếc gương thần kỳ không bao giờ biết nói dối.", scene: "Báu vật" },
+                    { en: "Every morning, she stood before it, admiring her own reflection with a smirk.", vi: "Mỗi sáng, bà đứng trước gương, ngắm nhìn hình ảnh phản chiếu của mình với một nụ cười nửa miệng.", scene: "Tự mãn" },
+                    { en: "'Mirror, mirror on the wall, who in this land is the fairest of all?'", vi: "'Gương kia ngự ở trên tường, thế gian ai đẹp được dường như ta?'", scene: "Câu hỏi" },
+                    { en: "The mirror would answer: 'You, my Queen, are the fairest of them all.'", vi: "Gương sẽ trả lời: 'Thưa hoàng hậu, bà là người đẹp nhất trong tất cả.'", scene: "Câu trả lời" },
+                    { en: "But Snow White grew up and her beauty began to shine like the morning sun.", vi: "Nhưng Bạch Tuyết lớn lên và vẻ đẹp của nàng bắt đầu tỏa sáng như ánh mặt trời buổi sớm.", scene: "Tỏa sáng" },
+                    { en: "When she turned seven, she was as beautiful as the day, even more than the Queen.", vi: "Khi nàng lên bảy, nàng đẹp như ánh ban ngày, thậm chí còn hơn cả hoàng hậu.", scene: "Vượt xa" },
+                    { en: "One day, the Queen asked the mirror again, expecting the usual praise.", vi: "Một ngày nọ, hoàng hậu lại hỏi gương thần, mong đợi lời khen ngợi như thường lệ.", scene: "Hy vọng" },
+                    { en: "The mirror replied: 'Queen, you are fair, but Snow White is fairer than you.'", vi: "Gương đáp: 'Hoàng hậu, bà đẹp thật, nhưng Bạch Tuyết còn đẹp hơn bà.'", scene: "Sự thật" },
+                    { en: "The Queen was horrified; her face turned yellow and green with jealousy.", vi: "Hoàng hậu khiếp hãi; gương mặt bà ta tái đi vì ghen tức.", scene: "Sốc" },
+                    { en: "From that hour, whenever she saw Snow White, her heart turned over in her breast.", vi: "Từ giờ khắc đó, mỗi khi nhìn thấy Bạch Tuyết, trái tim bà ta như thắt lại trong lồng ngực.", scene: "Thù hận" },
+
+                    // --- PHẦN 3: ÂM MƯU CỦA NGƯỜI THỢ SĂN ---
+                    { en: "She called a huntsman and whispered: 'Take that child away into the forest.'", vi: "Bà gọi một người thợ săn và thì thầm: 'Hãy đem đứa trẻ đó vào rừng sâu.'", scene: "Âm mưu" },
+                    { en: "'I will no longer have her in my sight. Kill her and bring proof!'", vi: "'Ta không muốn nhìn thấy nó nữa. Hãy giết nó và mang bằng chứng về đây!'", scene: "Mệnh lệnh" },
+                    { en: "The huntsman led Snow White into the thick trees, drawing his sharp hunting knife.", vi: "Người thợ săn dẫn Bạch Tuyết vào lùm cây rậm rạp, rút con dao săn sắc bén của mình ra.", scene: "Rừng u tối" },
+                    { en: "The poor girl began to cry: 'Oh, dear huntsman, spare my life!'", vi: "Cô gái tội nghiệp bắt đầu khóc: 'Ôi, thợ săn đáng kính, xin hãy tha mạng cho cháu!'", scene: "Van xin" },
+                    { en: "'I will run into the wild forest and never, ever come home again.'", vi: "'Cháu sẽ chạy vào rừng hoang và không bao giờ, không bao giờ trở về nhà nữa.'", scene: "Hứa hẹn" },
+                    { en: "Because she was so lovely, the huntsman had pity on her and lowered his blade.", vi: "Vì nàng quá đáng yêu, người thợ săn đã rủ lòng thương và hạ lưỡi dao xuống.", scene: "Lòng trắc ẩn" },
+                    { en: "'Run away, then, you poor child,' he said, feeling a weight lift from his heart.", vi: "'Vậy thì hãy chạy đi, đứa trẻ tội nghiệp,' ông nói, cảm thấy nhẹ lòng hơn.", scene: "Giải thoát" },
+                    { en: "He thought the wild beasts would soon devour her anyway.", vi: "Ông nghĩ rằng dù sao thì thú dữ cũng sớm ăn thịt nàng mà thôi.", scene: "Lo sợ" },
+                    { en: "A young boar came springing by, and the huntsman killed it instead.", vi: "Một con lợn rừng nhỏ lao qua, và người thợ săn đã giết nó để thay thế.", scene: "Đánh tráo" },
+                    { en: "He took the lungs and liver to the Queen as a gruesome token of his deed.", vi: "Ông mang phổi và gan về cho hoàng hậu như một tín vật rùng rợn cho hành động của mình.", scene: "Bằng chứng" },
+
+                    // --- PHẦN 4: LẠC LỐI TRONG RỪNG ---
+                    { en: "Snow White was now alone in the vast forest, surrounded by rustling leaves.", vi: "Bạch Tuyết giờ đây đơn độc giữa khu rừng rộng lớn, bao quanh bởi tiếng lá xào xạc.", scene: "Hoang mang" },
+                    { en: "Every shadow looked like a monster, and every sound made her heart race.", vi: "Mỗi chiếc bóng đều trông như quái vật, và mỗi âm thanh đều khiến tim nàng đập loạn nhịp.", scene: "Kinh sợ" },
+                    { en: "She ran as long as her feet would carry her, over jagged stones and thorns.", vi: "Nàng chạy cho đến khi đôi chân còn chịu đựng được, qua những tảng đá lởm chởm và gai góc.", scene: "Kiệt sức" },
+                    { en: "Just as the sun began to sink below the horizon, she saw a little house.", vi: "Ngay khi mặt trời bắt đầu lặn xuống đường chân trời, nàng nhìn thấy một ngôi nhà nhỏ.", scene: "Tia sáng" },
+                    { en: "The house was tiny but extraordinarily neat and clean.", vi: "Ngôi nhà nhỏ xíu nhưng cực kỳ ngăn nắp và sạch sẽ.", scene: "Ngôi nhà" },
+                    { en: "Inside, there was a white cloth spread on a table with seven little plates.", vi: "Bên trong, có một tấm khăn trắng trải trên bàn với bảy chiếc đĩa nhỏ.", scene: "Bày biện" },
+                    { en: "Beside each plate was a little spoon, a little knife, a little fork, and a cup.", vi: "Bên cạnh mỗi chiếc đĩa là một chiếc thìa nhỏ, dao nhỏ, nĩa nhỏ và một chiếc cốc.", scene: "Chi tiết" },
+                    { en: "Snow White was so hungry that she took a bit of vegetables and bread from each plate.", vi: "Bạch Tuyết đói đến mức nàng lấy một ít rau và bánh mì từ mỗi đĩa.", scene: "Ăn lót dạ" },
+                    { en: "She did not want to take everything from just one person.", vi: "Nàng không muốn lấy đi tất cả mọi thứ chỉ từ một người duy nhất.", scene: "Tử tế" },
+                    { en: "After eating, she felt very tired and tried to lie down in one of the beds.", vi: "Sau khi ăn xong, nàng cảm thấy rất mệt và cố gắng nằm xuống một trong những chiếc giường.", scene: "Tìm chỗ ngủ" },
+
+                    // --- PHẦN 5: BẢY CHÚ LÙN ---
+                    { en: "The first was too short, the second too long, but the seventh bed was just right.", vi: "Chiếc thứ nhất quá ngắn, chiếc thứ hai quá dài, nhưng chiếc thứ bảy thì vừa vặn.", scene: "Vừa vặn" },
+                    { en: "When it was quite dark, the masters of the house came home.", vi: "Khi trời đã tối mịt, những chủ nhân của ngôi nhà trở về.", scene: "Trở về" },
+                    { en: "They were seven dwarves who dug and delved in the mountains for ore.", vi: "Họ là bảy chú lùn, những người đào bới và tìm kiếm quặng trong núi.", scene: "Nghề nghiệp" },
+                    { en: "They lit their lamps and saw immediately that someone had moved their things.", vi: "Họ thắp đèn và nhận ra ngay lập tức rằng ai đó đã di chuyển đồ đạc của mình.", scene: "Phát hiện" },
+                    { en: "The first dwarf said: 'Who has been sitting on my stool?'", vi: "Chú lùn thứ nhất nói: 'Ai đã ngồi trên ghế của tôi?'", scene: "Thắc mắc" },
+                    { en: "The others looked around and cried: 'Someone has been eating from my plate!'", vi: "Những người khác nhìn quanh và kêu lên: 'Ai đó đã ăn đĩa của tôi!'", scene: "Ngạc nhiên" },
+                    { en: "Then the seventh dwarf looked at his bed and saw Snow White sleeping there.", vi: "Sau đó, chú lùn thứ bảy nhìn vào giường của mình và thấy Bạch Tuyết đang ngủ ở đó.", scene: "Tìm thấy" },
+                    { en: "They all ran over with their lamps and cried out in wonder.", vi: "Tất cả bọn họ chạy lại với những chiếc đèn và kêu lên trong sự kinh ngạc.", scene: "Trầm trồ" },
+                    { en: "'Good heavens! What a beautiful child!' they whispered, careful not to wake her.", vi: "'Trời đất ơi! Thật là một đứa trẻ xinh đẹp!' họ thì thầm, cẩn thận để không làm nàng thức giấc.", scene: "Khen ngợi" },
+                    { en: "In the morning, Snow White woke up and was frightened when she saw the dwarves.", vi: "Vào buổi sáng, Bạch Tuyết thức dậy và sợ hãi khi nhìn thấy các chú lùn.", scene: "Tỉnh giấc" },
+
+                    // --- PHẦN 6: CUỘC SỐNG MỚI VÀ SỰ CẢNH BÁO ---
+                    { en: "But they were friendly and asked: 'What is your name?'", vi: "Nhưng họ rất thân thiện và hỏi: 'Tên của cô là gì?'", scene: "Làm quen" },
+                    { en: "She told them her sad story, and the dwarves felt great sympathy for her.", vi: "Nàng kể cho họ nghe câu chuyện buồn của mình, và các chú lùn cảm thấy rất cảm thông.", scene: "Chia sẻ" },
+                    { en: "The dwarves offered: 'If you will take care of our house, you can stay forever.'", vi: "Các chú lùn đề nghị: 'Nếu cô chăm sóc nhà cửa cho chúng tôi, cô có thể ở lại mãi mãi.'", scene: "Đề nghị" },
+                    { en: "Snow White agreed happily and began her new life in the mountains.", vi: "Bạch Tuyết vui vẻ đồng ý và bắt đầu cuộc sống mới của mình trên núi.", scene: "Bắt đầu" },
+                    { en: "Every day, the dwarves went to mine gold, and Snow White stayed home alone.", vi: "Mỗi ngày, các chú lùn đi đào vàng, còn Bạch Tuyết ở nhà một mình.", scene: "Thói quen" },
+                    { en: "The good dwarves warned her: 'Your stepmother will soon find out you are here.'", vi: "Những chú lùn tốt bụng cảnh báo nàng: 'Mẹ kế của cô sẽ sớm biết cô ở đây thôi.'", scene: "Lời nhắc" },
+                    { en: "'Be careful, and let no one into the house while we are away!'", vi: "'Hãy cẩn thận, và đừng cho ai vào nhà khi chúng tôi đi vắng!'", scene: "Cảnh giác" },
+                    { en: "Indeed, the Queen asked her mirror again and discovered the truth.", vi: "Thật vậy, hoàng hậu lại hỏi gương lần nữa và khám phá ra sự thật.", scene: "Sự thật" },
+                    { en: "She was furious to learn that the huntsman had deceived her.", vi: "Bà ta tức điên lên khi biết rằng người thợ săn đã lừa dối mình.", scene: "Tức giận" },
+                    { en: "She began to plot a new way to destroy Snow White once and for all.", vi: "Bà ta bắt đầu âm mưu một cách mới để tiêu diệt Bạch Tuyết một lần và mãi mãi.", scene: "Mưu đồ" },
+
+                    // --- PHẦN 7: NHỮNG LẦN HÃM HẠI ---
+                    { en: "The Queen disguised herself as an old peddler woman and went to the forest.", vi: "Hoàng hậu cải trang thành một bà lão bán hàng rong và đi vào rừng.", scene: "Cải trang" },
+                    { en: "She knocked on the door and cried: 'Fine wares for sale! Pretty laces!'", vi: "Bà ta gõ cửa và rao: 'Hàng đẹp đây! Dây buộc áo lộng lẫy đây!'", scene: "Dụ dỗ" },
+                    { en: "Snow White looked out the window and thought: 'This old woman looks harmless.'", vi: "Bạch Tuyết nhìn ra cửa sổ và nghĩ: 'Bà lão này trông có vẻ vô hại.'", scene: "Mất cảnh giác" },
+                    { en: "The Queen laced Snow White's corset so tightly that the girl fell down breathless.", vi: "Hoàng hậu thắt dây áo chẽn của Bạch Tuyết chặt đến mức cô gái ngã xuống vì nghẹt thở.", scene: "Hãm hại" },
+                    { en: "The dwarves returned and cut the laces, bringing Snow White back to life.", vi: "Các chú lùn trở về và cắt dây áo, đưa Bạch Tuyết trở lại với sự sống.", scene: "Cứu trợ" },
+                    { en: "Next, the Queen tried a poisoned comb, but the dwarves saved her again.", vi: "Tiếp theo, hoàng hậu thử một chiếc lược có độc, nhưng các chú lùn lại cứu nàng lần nữa.", scene: "Thất bại" },
+                    { en: "Finally, the Queen spent all night making a deadly, poisoned apple.", vi: "Cuối cùng, hoàng hậu dành cả đêm để làm một quả táo độc chết người.", scene: "Cực độc" },
+                    { en: "One side was innocent and white, but the other red side was filled with poison.", vi: "Một mặt thì vô hại và trắng, nhưng mặt màu đỏ kia thì đầy chất độc.", scene: "Quả táo" },
+                    { en: "Snow White took a bite of the red half and fell to the ground instantly.", vi: "Bạch Tuyết cắn một miếng ở nửa màu đỏ và lập tức ngã xuống đất.", scene: "Lời nguyền" },
+                    { en: "This time, the dwarves could not wake her up no matter what they tried.", vi: "Lần này, các chú lùn không thể làm nàng tỉnh dậy dù họ đã cố gắng thế nào.", scene: "Tuyệt vọng" },
+
+                    // --- PHẦN 8: KẾT THÚC HẠNH PHÚC ---
+                    { en: "They were so sad that they cried for three whole days.", vi: "Họ buồn đến mức đã khóc suốt ba ngày trời.", scene: "Đau buồn" },
+                    { en: "They could not bury her in the dark earth, so they made a glass coffin.", vi: "Họ không thể chôn nàng xuống vùng đất tối tăm, nên họ đã làm một chiếc quan tài thủy tinh.", scene: "Quan tài" },
+                    { en: "A Prince traveling through the forest saw the coffin and fell in love.", vi: "Một hoàng tử đi ngang qua khu rừng đã nhìn thấy quan tài và đem lòng yêu thương.", scene: "Gặp gỡ" },
+                    { en: "He begged the dwarves: 'Let me take her to my castle; I cannot live without her.'", vi: "Chàng cầu xin các chú lùn: 'Hãy để ta đưa nàng về lâu đài; ta không thể sống thiếu nàng.'", scene: "Cầu xin" },
+                    { en: "As his servants carried the coffin, they stumbled over a tree root.", vi: "Khi các người hầu khiêng quan tài, họ vấp phải một rễ cây.", scene: "Sự cố" },
+                    { en: "The jolt caused the piece of poisoned apple to fly out of Snow White's throat.", vi: "Cú xóc khiến miếng táo độc văng ra khỏi cổ họng của Bạch Tuyết.", scene: "Phép màu" },
+                    { en: "She opened her eyes and said: 'Oh, heaven, where am I?'", vi: "Nàng mở mắt và nói: 'Ôi trời ơi, em đang ở đâu thế này?'", scene: "Tỉnh dậy" },
+                    { en: "The Prince joyfully replied: 'You are with me!' and told her everything.", vi: "Hoàng tử vui mừng đáp: 'Nàng đang ở bên ta!' và kể cho nàng nghe mọi chuyện.", scene: "Vui mừng" },
+                    { en: "They were married in a grand ceremony with people from all over the land.", vi: "Họ đã kết hôn trong một đại lễ long trọng với người dân từ khắp nơi trên cả nước.", scene: "Đám cưới" },
+                    { en: "And they lived happily and peacefully for the rest of their days.", vi: "Và họ đã sống hạnh phúc và bình yên trong suốt phần đời còn lại của mình.", scene: "Kết thúc" }
+                ]
+            },
+            cinderella: {
+                titleEn: "Cinderella",
+                titleVi: "Cô Bé Lọ Lem",
+                data: [
+                    // --- PHẦN 1: GIA CẢNH VÀ SỰ THAY ĐỔI ---
+                    { en: "Once upon a time, a wealthy widower lived with his young daughter, Cinderella.", vi: "Ngày xửa ngày xưa, một người góa vợ giàu có sống cùng cô con gái nhỏ, Lọ Lem.", scene: "Giới thiệu" },
+                    { en: "She was a girl of unparalleled goodness and sweet temper.", vi: "Nàng là một cô gái có lòng tốt vô song và tính tình dịu dàng.", scene: "Tính cách" },
+                    { en: "Hoping to give her a mother's care, the father married a second wife.", vi: "Hy vọng mang lại cho con sự chăm sóc của mẹ, người cha đã cưới người vợ thứ hai.", scene: "Tái hôn" },
+                    { en: "The new wife had a proud and haughty spirit, unlike anyone had ever seen.", vi: "Người vợ mới có một tâm hồn kiêu ngạo và ngạo mạn, khác hẳn với bất kỳ ai từng thấy.", scene: "Mẹ kế" },
+                    { en: "She had two daughters of her own, who were just like her in every way.", vi: "Bà ta có hai cô con gái riêng, những người giống hệt bà ta về mọi mặt.", scene: "Chị kế" },
+                    { en: "As soon as the father passed away, the stepmother showed her true colors.", vi: "Ngay sau khi người cha qua đời, bà mẹ kế đã lộ rõ bộ mặt thật của mình.", scene: "Bi kịch" },
+                    { en: "She could not bear the girl's beauty, which made her own daughters look ugly.", vi: "Bà ta không thể chịu được vẻ đẹp của cô gái, thứ khiến con gái bà ta trông thật xấu xí.", scene: "Ghen tị" },
+                    { en: "She forced Cinderella to do the meanest work about the house.", vi: "Bà ta bắt Lọ Lem phải làm những công việc thấp kém nhất trong nhà.", scene: "Bóc lột" },
+                    { en: "Cinderella washed the dishes, scrubbed the stairs, and polished the furniture.", vi: "Lọ Lem rửa bát đĩa, cọ rửa cầu thang và đánh bóng đồ đạc.", scene: "Khổ cực" },
+                    { en: "She slept in a wretched garret, on a straw bed, while her sisters had elegant rooms.", vi: "Nàng ngủ trong một căn gác mái tồi tàn, trên một chiếc giường rơm, trong khi các chị có những căn phòng sang trọng.", scene: "Bất công" },
+
+                    // --- PHẦN 2: TÊN GỌI "LỌ LEM" ---
+                    { en: "The poor girl bore everything with patience and dared not complain to her father.", vi: "Cô gái tội nghiệp nhẫn nại chịu đựng mọi thứ và không dám phàn nàn với cha mình.", scene: "Nhẫn nhịn" },
+                    { en: "When her work was done, she used to sit in the chimney corner among the cinders.", vi: "Khi công việc xong xuôi, nàng thường ngồi trong góc lò sưởi giữa đống tro tàn.", scene: "Góc bếp" },
+                    { en: "Because of this, her stepsisters gave her the nickname 'Cinderella'.", vi: "Vì lý do này, các chị kế đã đặt cho nàng biệt danh là 'Cinderella' (Lọ Lem).", scene: "Biệt danh" },
+                    { en: "Despite her rags, Cinderella was still a hundred times more beautiful than them.", vi: "Dù mặc giẻ rách, Lọ Lem vẫn đẹp hơn họ gấp trăm lần.", scene: "Nhan sắc" },
+                    { en: "One day, the King's son gave a grand ball and invited all persons of fashion.", vi: "Một ngày nọ, con trai đức vua tổ chức một buổi vũ hội lớn và mời tất cả những người thượng lưu.", scene: "Lời mời" },
+                    { en: "The two stepsisters were also invited, for they cut a very grand figure.", vi: "Hai người chị kế cũng được mời, vì họ có vẻ ngoài rất bảnh bao.", scene: "Háo hức" },
+                    { en: "They spent all day choosing the best gowns and choosing their hair-dressers.", vi: "Họ dành cả ngày để chọn những chiếc váy đẹp nhất và chọn thợ làm tóc.", scene: "Chuẩn bị" },
+                    { en: "Cinderella had to help them, starching their linen and pleating their ruffles.", vi: "Lọ Lem phải giúp họ, hồ vải lanh và xếp nếp những dải đăng ten.", scene: "Phục vụ" },
+                    { en: "'Cinderella,' they asked, 'would you not be glad to go to the ball?'", vi: "'Lọ Lem,' họ hỏi, 'mày chẳng phải rất vui nếu được đi dự vũ hội sao?'", scene: "Mỉa mai" },
+                    { en: "'Alas,' she said, 'you only mock me; it is not for such as I to go there.'", vi: "'Chao ôi,' nàng nói, 'các chị chỉ chế nhạo em; nơi đó không dành cho những người như em.'", scene: "Tủi thân" },
+
+                    // --- PHẦN 3: BÀ TIÊN ĐỠ ĐẦU ---
+                    { en: "Finally, the happy day came; the sisters departed, and Cinderella followed them with her eyes.", vi: "Cuối cùng, ngày vui cũng đến; hai người chị khởi hành, và Lọ Lem nhìn theo họ.", scene: "Cô đơn" },
+                    { en: "When she could no longer see them, she began to cry bitterly.", vi: "Khi không còn nhìn thấy họ nữa, nàng bắt đầu khóc nức nở.", scene: "Tuyệt vọng" },
+                    { en: "Suddenly, her Fairy Godmother appeared and asked why she was weeping.", vi: "Đột nhiên, Bà Tiên đỡ đầu xuất hiện và hỏi tại sao nàng lại khóc.", scene: "Phép màu" },
+                    { en: "Cinderella could not speak for sobbing, but the Fairy understood everything.", vi: "Lọ Lem không thể nói vì nghẹn ngào, nhưng Bà Tiên đã hiểu tất cả.", scene: "Thấu hiểu" },
+                    { en: "'Run into the garden,' said the Fairy, 'and bring me a pumpkin.'", vi: "'Hãy chạy vào vườn,' Bà Tiên nói, 'và mang cho ta một quả bí ngô.'", scene: "Chỉ dẫn" },
+                    { en: "With a touch of her magic wand, the pumpkin turned into a golden coach.", vi: "Với một cái chạm tay của cây gậy phép, quả bí ngô đã biến thành một cỗ xe vàng.", scene: "Cỗ xe" },
+                    { en: "Then, she found six mice in a trap and turned them into six fine horses.", vi: "Sau đó, bà tìm thấy sáu con chuột trong bẫy và biến chúng thành sáu con ngựa đẹp đẽ.", scene: "Ngựa kéo" },
+                    { en: "A fat rat was turned into a jolly postilion with the finest mustache.", vi: "Một con chuột cống béo được biến thành một người điều khiển ngựa vui vẻ với bộ ria mép đẹp nhất.", scene: "Người đánh xe" },
+                    { en: "Six lizards from the garden became six tall footmen in splendid uniforms.", vi: "Sáu con thằn lằn từ trong vườn trở thành sáu người hầu cao lớn trong bộ đồng phục lộng lẫy.", scene: "Người hầu" },
+                    { en: "Finally, the Fairy touched Cinderella's rags, and they became a dress of gold and silver.", vi: "Cuối cùng, Bà Tiên chạm vào bộ giẻ rách của Lọ Lem, và chúng trở thành một chiếc váy bằng vàng và bạc.", scene: "Váy dạ hội" },
+
+                    // --- PHẦN 4: ĐÔI GIÀY THỦY TINH VÀ BUỔI VŨ HỘI ---
+                    { en: "On her feet was a pair of glass slippers, the prettiest in the whole world.", vi: "Trên chân nàng là một đôi giày thủy tinh, đẹp nhất trên đời.", scene: "Giày thủy tinh" },
+                    { en: "The Fairy warned her: 'Do not stay a moment after midnight.'", vi: "Bà Tiên cảnh báo nàng: 'Đừng ở lại dù chỉ một khoảnh khắc sau nửa đêm.'", scene: "Lời dặn" },
+                    { en: "'If you stay a second longer, your coach will become a pumpkin again.'", vi: "'Nếu con ở lại lâu hơn dù chỉ một giây, cỗ xe của con sẽ trở lại thành quả bí ngô.'", scene: "Cảnh báo" },
+                    { en: "Cinderella promised and drove away, her heart dancing with joy.", vi: "Lọ Lem hứa và lái xe đi, trái tim nàng nhảy múa vì vui sướng.", scene: "Khởi hành" },
+                    { en: "When she arrived, the King's son was told that a great princess had come.", vi: "Khi nàng đến, hoàng tử được báo rằng một nàng công chúa vĩ đại đã tới.", scene: "Đến nơi" },
+                    { en: "He ran out to receive her and led her into the ballroom.", vi: "Chàng chạy ra đón nàng và dẫn nàng vào phòng khiêu vũ.", scene: "Tiếp đón" },
+                    { en: "A deep silence fell; the dancers stopped and the violins ceased to play.", vi: "Một sự im lặng bao trùm; những người khiêu vũ dừng lại và tiếng đàn violin ngừng bặt.", scene: "Kinh ngạc" },
+                    { en: "Everyone was struck by the beauty of the unknown stranger.", vi: "Mọi người đều bị sửng sốt bởi vẻ đẹp của người lạ mặt không ai biết tên.", scene: "Trầm trồ" },
+                    { en: "The Prince took the hand of Cinderella and danced with her all evening.", vi: "Hoàng tử nắm lấy tay Lọ Lem và khiêu vũ với nàng suốt cả buổi tối.", scene: "Khiêu vũ" },
+                    { en: "He would not dance with anyone else and never let go of her hand.", vi: "Chàng không khiêu vũ với bất kỳ ai khác và không bao giờ buông tay nàng ra.", scene: "Say đắm" },
+
+                    // --- PHẦN 5: CHẠY TRỐN LÚC NỬA ĐÊM ---
+                    { en: "Cinderella forgot the time until she heard the clock strike eleven and three quarters.", vi: "Lọ Lem quên mất thời gian cho đến khi nàng nghe thấy đồng hồ điểm 11 giờ 45 phút.", scene: "Quên giờ" },
+                    { en: "She remembered the Fairy's warning and immediately took her leave.", vi: "Nàng nhớ lại lời cảnh báo của Bà Tiên và lập tức cáo từ.", scene: "Vội vã" },
+                    { en: "On the second night, the ball was even more magnificent.", vi: "Vào đêm thứ hai, buổi vũ hội thậm chí còn lộng lẫy hơn.", scene: "Đêm thứ hai" },
+                    { en: "The Prince stayed by her side, whispering sweet words to her.", vi: "Hoàng tử luôn ở bên cạnh nàng, thì thầm những lời ngọt ngào với nàng.", scene: "Mật ngọt" },
+                    { en: "Suddenly, the clock began to strike twelve. Cinderella started up and fled.", vi: "Đột nhiên, đồng hồ bắt đầu điểm mười hai giờ. Lọ Lem giật mình và bỏ chạy.", scene: "Bỏ chạy" },
+                    { en: "The Prince ran after her, but she was too swift for him.", vi: "Hoàng tử chạy theo nàng, nhưng nàng quá nhanh so với chàng.", scene: "Đuổi theo" },
+                    { en: "In her haste, she dropped one of her glass slippers on the palace steps.", vi: "Trong lúc vội vã, nàng đã đánh rơi một chiếc giày thủy tinh trên bậc thềm cung điện.", scene: "Rơi giày" },
+                    { en: "The Prince picked it up carefully and looked at it with love.", vi: "Hoàng tử cẩn thận nhặt nó lên và nhìn nó với tình yêu thương.", scene: "Kỷ vật" },
+                    { en: "Cinderella reached home out of breath, in her old dirty rags once more.", vi: "Lọ Lem về đến nhà trong tình trạng hổn hển, lại trong bộ giẻ rách bẩn thỉu cũ kỹ.", scene: "Trở lại" },
+                    { en: "Nothing remained of her splendor but one little glass slipper.", vi: "Chẳng còn gì sót lại từ vẻ lộng lẫy của nàng ngoại trừ một chiếc giày thủy tinh nhỏ.", scene: "Sót lại" },
+
+                    // --- PHẦN 6: CUỘC TÌM KIẾM CHỦ NHÂN CHIẾC GIÀY ---
+                    { en: "A few days later, the King's son proclaimed he would marry the owner of the shoe.", vi: "Vài ngày sau, con trai đức vua tuyên bố sẽ cưới chủ nhân của chiếc giày.", scene: "Thông báo" },
+                    { en: "The royal messenger went to all the houses, starting with the princesses.", vi: "Sứ giả hoàng gia đi đến tất cả các nhà, bắt đầu từ các nàng công chúa.", scene: "Tìm kiếm" },
+                    { en: "At last, he came to the house of Cinderella's stepmother.", vi: "Cuối cùng, ông ta đến nhà của mẹ kế Lọ Lem.", scene: "Hy vọng" },
+                    { en: "The two sisters tried with all their might to thrust their feet into the slipper.", vi: "Hai người chị đã cố gắng hết sức để nhét chân vào chiếc giày.", scene: "Gượng ép" },
+                    { en: "One sister cut off her toe, and the other cut off her heel to make it fit.", vi: "Một người chị cắt ngón chân, người kia cắt gót chân để làm cho nó vừa.", scene: "Đau đớn" },
+                    { en: "But the blood revealed their deceit, and the slipper remained empty.", vi: "Nhưng máu đã tiết lộ sự lừa dối của họ, và chiếc giày vẫn trống không.", scene: "Lộ diện" },
+                    { en: "Cinderella, who was in the kitchen, asked: 'May I try it on?'", vi: "Lọ Lem, người đang ở trong bếp, hỏi: 'Em có thể thử nó không?'", scene: "Đề nghị" },
+                    { en: "The sisters laughed and mocked her: 'How could a cinder-girl wear this?'", vi: "Các chị cười nhạo nàng: 'Làm sao một đứa con gái lọ lem lại có thể đi cái này?'", scene: "Chế giễu" },
+                    { en: "The messenger, however, saw that Cinderella was very beautiful.", vi: "Tuy nhiên, vị sứ giả nhận thấy Lọ Lem rất xinh đẹp.", scene: "Nhận ra" },
+                    { en: "He insisted that every girl in the kingdom must have a chance.", vi: "Ông nhấn mạnh rằng mọi cô gái trong vương quốc đều phải có cơ hội.", scene: "Công bằng" },
+
+                    // --- PHẦN 7: SỰ THẬT VÀ HẠNH PHÚC ---
+                    { en: "Cinderella sat down and put the slipper on her foot. It fitted perfectly!", vi: "Lọ Lem ngồi xuống và xỏ chiếc giày vào chân. Nó vừa khít một cách hoàn hảo!", scene: "Vừa vặn" },
+                    { en: "To the sisters' amazement, she drew the other slipper from her pocket.", vi: "Trong sự ngạc nhiên của các chị, nàng rút chiếc giày còn lại từ trong túi ra.", scene: "Bất ngờ" },
+                    { en: "Suddenly, the Fairy Godmother appeared and touched her with the wand.", vi: "Đột nhiên, Bà Tiên đỡ đầu xuất hiện và chạm vào nàng bằng cây gậy phép.", scene: "Biến hình" },
+                    { en: "Her rags turned into clothes even more magnificent than before.", vi: "Bộ giẻ rách của nàng biến thành quần áo thậm chí còn lộng lẫy hơn trước.", scene: "Lộng lẫy" },
+                    { en: "The sisters recognized her as the beautiful stranger from the ball.", vi: "Hai người chị nhận ra nàng chính là người lạ xinh đẹp trong buổi vũ hội.", scene: "Nhận diện" },
+                    { en: "They threw themselves at her feet and begged for forgiveness.", vi: "Họ quỳ xuống chân nàng và cầu xin sự tha thứ.", scene: "Hối lỗi" },
+                    { en: "Cinderella, as kind as she was beautiful, forgave them with all her heart.", vi: "Lọ Lem, vốn tốt bụng như chính vẻ đẹp của mình, đã tha thứ cho họ bằng cả trái tim.", scene: "Lòng vị tha" },
+                    { en: "She was taken to the palace, where the Prince was overjoyed to see her.", vi: "Nàng được đưa đến cung điện, nơi hoàng tử vô cùng vui sướng khi gặp lại nàng.", scene: "Đoàn tụ" },
+                    { en: "The Prince married her, and they celebrated for many days.", vi: "Hoàng tử đã cưới nàng, và họ đã ăn mừng trong nhiều ngày.", scene: "Đám cưới" },
+                    { en: "Cinderella even provided homes for her sisters in the palace.", vi: "Lọ Lem thậm chí còn sắp xếp chỗ ở cho các chị mình trong cung điện.", scene: "Hào hiệp" },
+                    { en: "They all lived in peace and happiness for many years to come.", vi: "Tất cả họ sống trong hòa bình và hạnh phúc trong nhiều năm tới.", scene: "Kết thúc" }
+                ]
+            },
+            wizardKing: {
+                titleEn: "The Wizard King",
+                titleVi: "Vua Pháp Sư",
+                data: [
+                    // --- PHẦN 1: VỊ VUA PHÁP SƯ VÀ LỜI NGUYỀN ---
+                    { en: "Once there lived a King who was lord over many vast lands.", vi: "Ngày xưa có một vị vua là chúa tể của nhiều vùng đất rộng lớn.", scene: "Vị Vua" },
+                    { en: "But he was no ordinary king; he had mastered the darkest secrets of magic.", vi: "Nhưng ông không phải một vị vua bình thường; ông đã làm chủ được những bí mật đen tối nhất của ma thuật.", scene: "Ma thuật" },
+                    { en: "He married a beautiful Princess, and in time, they had a son.", vi: "Ông kết hôn với một nàng Công chúa xinh đẹp, và theo thời gian, họ sinh được một cậu con trai.", scene: "Hoàng tử" },
+                    { en: "The Queen was uneasy, for she knew wizards and fairies had long been enemies.", vi: "Hoàng hậu không yên lòng, vì bà biết rằng các pháp sư và tiên nữ từ lâu đã là kẻ thù của nhau.", scene: "Lo âu" },
+                    { en: "As soon as the baby was strong enough, she set out to find her Fairy Godmother.", vi: "Ngay khi đứa bé đủ cứng cáp, bà lên đường đi tìm Bà Tiên đỡ đầu của mình.", scene: "Lên đường" },
+                    { en: "The Queen feared her husband's power would one day corrupt their innocent child.", vi: "Hoàng hậu sợ rằng quyền năng của chồng mình một ngày nào đó sẽ làm hỏng đứa trẻ ngây thơ.", scene: "Nỗi sợ" },
+                    { en: "The Fairy Godmother welcomed them and kissed the infant's forehead.", vi: "Bà Tiên đỡ đầu chào đón họ và hôn lên trán đứa trẻ sơ sinh.", scene: "Phước lành" },
+                    { en: "She gave the Prince a gift: he would please everyone and learn everything instantly.", vi: "Bà ban cho Hoàng tử một món quà: cậu sẽ làm hài lòng tất cả mọi người và học mọi thứ ngay lập tức.", scene: "Món quà" },
+                    { en: "A few years later, the Queen fell ill and called her son to her bedside.", vi: "Vài năm sau, hoàng hậu lâm bệnh và gọi con trai đến bên giường bệnh.", scene: "Lâm chung" },
+                    { en: "'My son,' she whispered, 'never do anything without consulting the Fairy.'", vi: "'Con trai của mẹ,' bà thì thầm, 'đừng bao giờ làm điều gì mà không hỏi ý kiến Bà Tiên.'", scene: "Dặn dò" },
+
+                    // --- PHẦN 2: SỰ BIẾN HÌNH VÀ VỤ BẮT CÓC ---
+                    { en: "After the Queen died, the King was overwhelmed by a terrible grief.", vi: "Sau khi hoàng hậu qua đời, nhà vua bị bao phủ bởi một nỗi đau buồn khủng khiếp.", scene: "Tang thương" },
+                    { en: "His palace reminded him too much of his loss, so he decided to travel.", vi: "Cung điện gợi nhắc quá nhiều về sự mất mát, vì vậy ông quyết định đi du hành.", scene: "Du hành" },
+                    { en: "Using his arts, he shapeshifted into various animals to observe the world unseen.", vi: "Sử dụng phép thuật, ông biến hình thành nhiều loài thú để quan sát thế giới mà không bị phát hiện.", scene: "Biến hình" },
+                    { en: "One day, while soaring as a great eagle, he saw a distant, sunny country.", vi: "Một ngày nọ, khi đang bay lượn trong lốt một con đại bàng lớn, ông nhìn thấy một đất nước xa xôi đầy nắng.", scene: "Đại bàng" },
+                    { en: "There, he spotted a Princess of such astounding beauty that his heart stopped.", vi: "Ở đó, ông phát hiện ra một nàng Công chúa có vẻ đẹp kinh ngạc đến mức khiến tim ông ngừng đập.", scene: "Gặp gỡ" },
+                    { en: "She was the only daughter of a widow Queen and lived a sheltered life.", vi: "Nàng là con gái độc nhất của một bà hoàng hậu góa bụa và sống một cuộc đời được bao bọc.", scene: "Hoàn cảnh" },
+                    { en: "Driven by obsession, the King dove down and snatched her from her garden.", vi: "Bị thúc đẩy bởi sự ám ảnh, nhà vua lao xuống và bắt nàng đi khỏi khu vườn.", scene: "Bắt cóc" },
+                    { en: "He flew across mountains and seas until they reached his hidden enchanted castle.", vi: "Ông bay qua những dãy núi và biển cả cho đến khi họ tới lâu đài bị phù phép ẩn khuất của ông.", scene: "Trốn chạy" },
+                    { en: "The Princess wept, but the King pleaded with her to marry him.", vi: "Công chúa khóc lóc, nhưng nhà vua cầu xin nàng hãy kết hôn với ông.", scene: "Cầu khẩn" },
+                    { en: "He gave her fine jewels, silk gowns, and a charming parrot to talk to.", vi: "Ông tặng nàng những viên ngọc quý, váy lụa và một con vẹt duyên dáng để trò chuyện.", scene: "Chiêu dụ" },
+
+                    // --- PHẦN 3: SỰ GHEN TỊ CỦA NGƯỜI CHA ---
+                    { en: "Despite the luxury, the Princess remained cold and silent toward the King.", vi: "Dù sống trong xa hoa, Công chúa vẫn lạnh lùng và im lặng với nhà vua.", scene: "Lạnh nhạt" },
+                    { en: "She spent her days by the window, staring at the sky with longing eyes.", vi: "Nàng dành cả ngày bên cửa sổ, nhìn lên bầu trời với đôi mắt khao khát.", scene: "U buồn" },
+                    { en: "The King grew paranoid, fearing that she might fall for someone younger.", vi: "Nhà vua trở nên hoang tưởng, sợ rằng nàng có thể nảy sinh tình cảm với ai đó trẻ trung hơn.", scene: "Hoang tưởng" },
+                    { en: "He thought of his son, the Prince, who was now a handsome and talented man.", vi: "Ông nghĩ đến con trai mình, vị Hoàng tử giờ đây đã là một thanh niên bảnh bao và tài giỏi.", scene: "Tình địch" },
+                    { en: "Fearing the Prince might be a rival, the King decided to banish him.", vi: "Sợ rằng Hoàng tử có thể là một tình địch, nhà vua quyết định đuổi chàng đi.", scene: "Xua đuổi" },
+                    { en: "He sent the Prince on a long journey to a far-off kingdom on a false mission.", vi: "Ông cử Hoàng tử đi một chuyến hành trình dài đến một vương quốc xa xôi với một nhiệm vụ giả.", scene: "Mưu đồ" },
+                    { en: "The Prince traveled for months, passing through the land the Princess was stolen from.", vi: "Hoàng tử du hành nhiều tháng trời, đi ngang qua vùng đất nơi Công chúa bị bắt đi.", scene: "Hành trình" },
+                    { en: "He heard the people mourning for their lost Princess and was deeply moved.", vi: "Chàng nghe thấy dân chúng than khóc cho nàng Công chúa mất tích và vô cùng xúc động.", scene: "Thương cảm" },
+                    { en: "He realized his father was the one who had committed this terrible crime.", vi: "Chàng nhận ra chính cha mình là người đã gây ra tội ác khủng khiếp này.", scene: "Sự thật" },
+                    { en: "Remembering his mother's advice, he went to find the Fairy Godmother immediately.", vi: "Nhớ lời dặn của mẹ, chàng lập tức đi tìm Bà Tiên đỡ đầu.", scene: "Cầu cứu" },
+
+                    // --- PHẦN 4: KẾ HOẠCH "HOÀNG TỬ VẸT" ---
+                    { en: "'My dear Prince,' the Fairy said, 'you cannot enter that castle as a man.'", vi: "'Hoàng tử yêu quý,' Bà Tiên nói, 'con không thể vào lâu đài đó trong hình hài con người.'", scene: "Lời tiên" },
+                    { en: "The castle was protected by powerful spells that would kill any intruder.", vi: "Lâu đài được bảo vệ bởi những bùa chú quyền năng có thể giết chết bất kỳ kẻ xâm nhập nào.", scene: "Bùa chú" },
+                    { en: "The Fairy used her magic to track the Princess's pet parrot.", vi: "Bà Tiên dùng phép thuật của mình để theo dấu con vẹt cưng của Công chúa.", scene: "Truy tìm" },
+                    { en: "She captured the bird and held it safely in her magical garden.", vi: "Bà bắt con chim và giữ nó an toàn trong khu vườn ma thuật của mình.", scene: "Giam giữ" },
+                    { en: "Then, she touched the Prince with her wand, and he began to shrink.", vi: "Sau đó, bà chạm cây gậy phép vào Hoàng tử, và chàng bắt đầu thu nhỏ lại.", scene: "Biến hóa" },
+                    { en: "His skin turned into green feathers, and his nose became a curved beak.", vi: "Da chàng biến thành lông vũ xanh, và mũi chàng trở thành một cái mỏ cong.", scene: "Vẹt xanh" },
+                    { en: "He was now an identical copy of the Princess's beloved parrot.", vi: "Chàng giờ đây là một bản sao y hệt con vẹt yêu quý của Công chúa.", scene: "Hoàn tất" },
+                    { en: "The Prince flew across the jagged cliffs toward the enchanted castle.", vi: "Hoàng tử bay qua những vách đá lởm chởm hướng về phía lâu đài bị phù phép.", scene: "Đột nhập" },
+                    { en: "He landed on the Princess's balcony and began to sing a sweet melody.", vi: "Chàng đáp xuống ban công của Công chúa và bắt đầu hát một giai điệu ngọt ngào.", scene: "Tiếp cận" },
+                    { en: "The Princess was overjoyed to see her pet and took him inside her room.", vi: "Công chúa vui mừng khôn xiết khi thấy thú cưng của mình và đưa chàng vào phòng.", scene: "Mừng rỡ" },
+
+                    // --- PHẦN 5: CUỘC TRÒ CHUYỆN BÍ MẬT ---
+                    { en: "Inside the room, the Parrot started to speak with a human voice.", vi: "Ở trong phòng, con Vẹt bắt đầu nói bằng giọng người.", scene: "Kỳ lạ" },
+                    { en: "The Princess was startled and almost dropped the bird in surprise.", vi: "Công chúa giật mình và suýt chút nữa đánh rơi con chim vì ngạc nhiên.", scene: "Kinh ngạc" },
+                    { en: "'Do not be afraid, fair Princess,' the Parrot whispered softly.", vi: "'Đừng sợ, nàng Công chúa xinh đẹp,' con Vẹt thì thầm khẽ khàng.", scene: "Trấn an" },
+                    { en: "'I am the King's son, and I have come to rescue you from his prison.'", vi: "'Ta là con trai của nhà vua, và ta đến để giải cứu nàng khỏi ngục tù của ông ấy.'", scene: "Tiết lộ" },
+                    { en: "He told her how his father had turned into an eagle to steal her away.", vi: "Chàng kể cho nàng nghe việc cha mình đã biến thành đại bàng để bắt nàng đi như thế nào.", scene: "Kể chuyện" },
+                    { en: "The Princess felt a spark of hope in her heart for the first time.", vi: "Công chúa cảm thấy một tia hy vọng nhen nhóm trong lòng lần đầu tiên.", scene: "Hy vọng" },
+                    { en: "They spent the night plotting their escape while the King was sleeping.", vi: "Họ dành cả đêm để lập kế hoạch trốn thoát trong khi nhà vua đang ngủ.", scene: "Bàn bạc" },
+                    { en: "The King visited the next day, but the Parrot remained silent and bird-like.", vi: "Nhà vua đến thăm vào ngày hôm sau, nhưng con Vẹt vẫn giữ im lặng và hành xử như một con chim.", scene: "Ngụy trang" },
+                    { en: "He suspected nothing, seeing his captive smile for once in her life.", vi: "Ông không nghi ngờ gì khi thấy tù nhân của mình mỉm cười lần đầu tiên trong đời.", scene: "Lầm tưởng" },
+                    { en: "As soon as the King left, the Prince-Parrot began the final preparations.", vi: "Ngay khi nhà vua rời đi, Hoàng tử Vẹt bắt đầu những khâu chuẩn bị cuối cùng.", scene: "Hành động" },
+
+                    // --- PHẦN 6: CHIẾC XE ĐẠI BÀNG ---
+                    { en: "The Fairy Godmother had not been idle; she was preparing a chariot.", vi: "Bà Tiên đỡ đầu không hề nhàn rỗi; bà đang chuẩn bị một cỗ xe.", scene: "Cỗ xe" },
+                    { en: "It was a chariot made of cloud and light, drawn by twelve mighty eagles.", vi: "Đó là một cỗ xe làm bằng mây và ánh sáng, được kéo bởi mười hai con đại bàng dũng mãnh.", scene: "Đại bàng" },
+                    { en: "She sent the real parrot to guide the chariot through the magical winds.", vi: "Bà cử con vẹt thật dẫn đường cho cỗ xe vượt qua những cơn gió ma thuật.", scene: "Dẫn đường" },
+                    { en: "The chariot arrived at the balcony at the stroke of midnight.", vi: "Cỗ xe đến ban công đúng vào lúc đồng hồ điểm nửa đêm.", scene: "Đúng giờ" },
+                    { en: "The Prince regained his human form for a brief moment to help the Princess up.", vi: "Hoàng tử lấy lại hình dáng người trong chốc lát để giúp Công chúa lên xe.", scene: "Trở lại" },
+                    { en: "They climbed into the chariot, and the eagles took flight into the starry sky.", vi: "Họ trèo lên cỗ xe, và đàn đại bàng cất cánh bay vào bầu trời đầy sao.", scene: "Bay lên" },
+                    { en: "The enchanted castle's bells began to ring, alerting the Wizard King.", vi: "Chuông của lâu đài phù thủy bắt đầu vang lên, báo động cho Vua Pháp Sư.", scene: "Báo động" },
+                    { en: "He looked out and saw the chariot disappearing into the moonlight.", vi: "Ông nhìn ra ngoài và thấy cỗ xe đang biến mất trong ánh trăng.", scene: "Phát hiện" },
+                    { en: "Roaring with fury, he turned himself into a massive black dragon to follow.", vi: "Gầm lên giận dữ, ông biến mình thành một con rồng đen khổng lồ để đuổi theo.", scene: "Truy kích" },
+                    { en: "The eagles flew with incredible speed, heading for the Princess's home.", vi: "Đàn đại bàng bay với tốc độ phi thường, hướng về quê hương của Công chúa.", scene: "Tăng tốc" },
+
+                    // --- PHẦN 7: TRẬN CHIẾN MA THUẬT CUỐI CÙNG ---
+                    { en: "The King caught up to them near the border of the Queen's kingdom.", vi: "Nhà vua đuổi kịp họ gần biên giới vương quốc của bà hoàng hậu.", scene: "Bắt kịp" },
+                    { en: "He held a flask containing a deadly magical potion that could freeze time.", vi: "Ông cầm một chiếc bình chứa lọ thuốc ma thuật chết người có thể đóng băng thời gian.", scene: "Vũ khí" },
+                    { en: "As he prepared to throw it, the Fairy Godmother appeared in the sky.", vi: "Khi ông chuẩn bị ném nó, Bà Tiên đỡ đầu xuất hiện trên bầu trời.", scene: "Cản trợ" },
+                    { en: "She raised her wand and created a wall of mirrors in front of the King.", vi: "Bà giơ gậy phép và tạo ra một bức tường gương trước mặt nhà vua.", scene: "Bức tường gương" },
+                    { en: "The King threw the potion, but it hit the mirror and splashed back on him.", vi: "Nhà vua ném lọ thuốc, nhưng nó đập vào gương và bắn ngược lại vào người ông.", scene: "Phản đòn" },
+                    { en: "He was instantly paralyzed and fell from the sky like a heavy stone.", vi: "Ông ngay lập tức bị tê liệt và rơi xuống từ bầu trời như một tảng đá nặng.", scene: "Thất bại" },
+                    { en: "The Prince and Princess landed safely at the palace of her mother.", vi: "Hoàng tử và Công chúa hạ cánh an toàn tại cung điện của mẹ nàng.", scene: "Hạ cánh" },
+                    { en: "The Fairy stripped the King of all his magical books and powers.", vi: "Bà Tiên tước bỏ tất cả sách phép và quyền năng ma thuật của nhà vua.", scene: "Tước quyền" },
+                    { en: "The Prince knelt before the Fairy and asked for his father's life.", vi: "Hoàng tử quỳ trước Bà Tiên và xin cho cha mình được sống.", scene: "Vị tha" },
+                    { en: "The King was pardoned, but he had to live as an ordinary man forever.", vi: "Nhà vua được ân xá, nhưng ông phải sống như một người bình thường mãi mãi.", scene: "Ân xá" },
+
+                    // --- PHẦN 8: HẠNH PHÚC VÀ LỜI THỀ ---
+                    { en: "The King was bitter; he vowed never to forgive his son or the Fairy.", vi: "Nhà vua cay cú; ông thề không bao giờ tha thứ cho con trai hay Bà Tiên.", scene: "Cay đắng" },
+                    { en: "He took to the skies as a bird one last time before his power faded.", vi: "Ông bay lên trời trong lốt chim lần cuối trước khi quyền năng tan biến.", scene: "Biến mất" },
+                    { en: "The Princess's mother was overjoyed to have her daughter back.", vi: "Mẹ của Công chúa vui mừng khôn xiết khi thấy con gái trở về.", scene: "Đoàn tụ" },
+                    { en: "She welcomed the Prince as the hero who had saved the kingdom.", vi: "Bà chào đón Hoàng tử như một người anh hùng đã cứu vương quốc.", scene: "Vinh danh" },
+                    { en: "A grand wedding was prepared, lasting for forty days and nights.", vi: "Một đám cưới hoành tráng được chuẩn bị, kéo dài suốt bốn mươi ngày đêm.", scene: "Đám cưới" },
+                    { en: "The Prince and Princess were crowned as the new King and Queen.", vi: "Hoàng tử và Công chúa được trao vương miện trở thành Vua và Hoàng hậu mới.", scene: "Lên ngôi" },
+                    { en: "The Fairy Godmother remained their protector for many years.", vi: "Bà Tiên đỡ đầu vẫn là người bảo vệ của họ trong nhiều năm.", scene: "Bảo hộ" },
+                    { en: "The people lived in a peace that had never been known before.", vi: "Người dân sống trong một nền hòa bình chưa từng thấy trước đây.", scene: "Hòa bình" },
+                    { en: "The story of the Wizard King and the Parrot was told for centuries.", vi: "Câu chuyện về Vua Pháp Sư và con Vẹt được kể lại trong nhiều thế kỷ.", scene: "Truyền tụng" },
+                    { en: "And they lived in true happiness, guided by wisdom and love.", vi: "And they lived in true happiness, guided by wisdom and love.", scene: "Kết thúc" }
+                ]
+            },
+            sixSwans: {
+                titleEn: "The Six Swans",
+                titleVi: "Sáu Con Thiên Nga",
+                data: [
+                    // --- PHẦN 1: NHÀ VUA VÀ CẠM BẪY TRONG RỪNG ---
+                    { en: "A certain King was hunting in a great forest, chasing a beautiful white hart.", vi: "Có một vị vua nọ đang đi săn trong một khu rừng lớn, đuổi theo một con hươu trắng xinh đẹp.", scene: "Cuộc săn" },
+                    { en: "He followed it so far that he lost his way and could not find the path home.", vi: "Ông đuổi theo nó quá xa đến mức lạc đường và không thể tìm thấy lối về nhà.", scene: "Lạc lối" },
+                    { en: "As evening fell, he met an old woman with a head that bobbed and shook.", vi: "Khi chiều tà buông xuống, ông gặp một bà lão với cái đầu cứ gật gù và rung bần bật.", scene: "Gặp gỡ" },
+                    { en: "She was a witch, and the King asked her for the way out of the woods.", vi: "Bà ta là một phù thủy, và nhà vua đã hỏi bà ta lối thoát khỏi khu rừng.", scene: "Cầu trợ" },
+                    { en: "'I will help you,' she said, 'but only if you marry my daughter.'", vi: "'Tôi sẽ giúp ông,' bà ta nói, 'nhưng chỉ khi ông cưới con gái tôi.'", scene: "Giao kèo" },
+                    { en: "The King was afraid and felt he had no choice but to agree.", vi: "Nhà vua sợ hãi và cảm thấy mình không còn lựa chọn nào khác ngoài việc đồng ý.", scene: "Ép buộc" },
+                    { en: "The witch's daughter was beautiful, but her eyes held a cold, wicked light.", vi: "Con gái của mụ phù thủy rất xinh đẹp, nhưng đôi mắt cô ta chứa đựng một tia sáng lạnh lẽo, độc ác.", scene: "Con gái phù thủy" },
+                    { en: "The King had seven children from his first wife: six boys and one girl.", vi: "Nhà vua có bảy người con với người vợ đầu tiên: sáu trai và một gái.", scene: "Gia đình" },
+                    { en: "He loved them more than anything and feared the new Queen would harm them.", vi: "Ông yêu các con hơn bất cứ thứ gì và sợ rằng vị hoàng hậu mới sẽ làm hại chúng.", scene: "Lo lắng" },
+                    { en: "So he hid them in a lonely castle in the middle of a thick forest.", vi: "Vì vậy, ông đã giấu các con trong một lâu đài hẻo lánh giữa một khu rừng rậm rạp.", scene: "Giấu con" },
+
+                    // --- PHẦN 2: CHIẾC ÁO PHÙ PHÉP VÀ LỜI NGUYỀN ---
+                    { en: "He found the castle using a magical ball of yarn given to him by a wise woman.", vi: "Ông tìm thấy lâu đài nhờ sử dụng một cuộn len thần kỳ được một người phụ nữ thông thái tặng.", scene: "Cuộn len" },
+                    { en: "Whenever he threw the yarn, it unrolled itself and showed him the secret path.", vi: "Mỗi khi ông ném cuộn len, nó tự mở ra và chỉ cho ông con đường bí mật.", scene: "Dẫn đường" },
+                    { en: "The new Queen soon grew suspicious of the King's frequent absences.", vi: "Vị hoàng hậu mới sớm trở nên nghi ngờ về những lần vắng mặt thường xuyên của nhà vua.", scene: "Nghi ngờ" },
+                    { en: "She bribed the servants with gold to find out where the King went.", vi: "Bà ta dùng vàng hối lộ những người hầu để tìm ra nơi nhà vua đã đi.", scene: "Hối lộ" },
+                    { en: "When she learned about the children, she sewed six small white silk shirts.", vi: "Khi biết về những đứa trẻ, bà ta đã khâu sáu chiếc áo sơ mi nhỏ bằng lụa trắng.", scene: "Mưu đồ" },
+                    { en: "She had learned witchcraft from her mother and wove a spell into each shirt.", vi: "Bà ta đã học được phù thủy từ mẹ mình và dệt một lời nguyền vào mỗi chiếc áo.", scene: "Bùa chú" },
+                    { en: "One day, while the King was away, she went into the forest with the shirts.", vi: "Một ngày nọ, khi nhà vua đi vắng, bà ta tiến vào rừng cùng với những chiếc áo.", scene: "Hành động" },
+                    { en: "The six brothers, seeing someone coming, ran out to welcome their guest.", vi: "Sáu anh em, khi thấy có người đang đến, đã chạy ra để chào đón vị khách.", scene: "Ngây thơ" },
+                    { en: "The Queen threw a shirt over each of them, and the spell took hold instantly.", vi: "Hoàng hậu ném một chiếc áo lên mỗi người, và lời nguyền lập tức có hiệu lực.", scene: "Biến hình" },
+                    { en: "They turned into six snow-white swans and flew away over the treetops.", vi: "Họ biến thành sáu con thiên nga trắng như tuyết và bay đi qua những ngọn cây.", scene: "Bay đi" },
+
+                    // --- PHẦN 3: SỰ HY SINH CỦA NGƯỜI EM GÁI ---
+                    { en: "The Queen went home, thinking she had gotten rid of all the children.", vi: "Hoàng hậu trở về nhà, nghĩ rằng mình đã loại bỏ được tất cả lũ trẻ.", scene: "Hả hê" },
+                    { en: "But she did not know the little girl was still hidden inside the castle.", vi: "Nhưng bà ta không biết rằng cô bé nhỏ vẫn còn đang trốn bên trong lâu đài.", scene: "Sống sót" },
+                    { en: "The girl waited for her brothers, but they did not return that evening.", vi: "Cô bé đợi các anh mình, nhưng họ đã không trở về vào tối hôm đó.", scene: "Chờ đợi" },
+                    { en: "The next morning, she set out into the forest to search for them.", vi: "Sáng hôm sau, cô bé lên đường vào rừng để tìm kiếm các anh.", scene: "Tìm kiếm" },
+                    { en: "She walked all day until she reached a small hut by the edge of a lake.", vi: "Cô đi bộ cả ngày cho đến khi tới một căn chòi nhỏ bên bờ hồ.", scene: "Căn chòi" },
+                    { en: "Inside, she found six small beds and hid under one of them.", vi: "Bên trong, cô tìm thấy sáu chiếc giường nhỏ và trốn dưới một trong số đó.", scene: "Ẩn nấp" },
+                    { en: "At sunset, six swans flew in through the window and landed on the floor.", vi: "Lúc hoàng hôn, sáu con thiên nga bay vào qua cửa sổ và đáp xuống sàn nhà.", scene: "Trở về" },
+                    { en: "They blew on each other, and their swan skins fell off like shirts.", vi: "Chúng thổi vào nhau, và lớp da thiên nga rụng xuống như những chiếc áo.", scene: "Hiện hình" },
+                    { en: "The girl jumped out and hugged her brothers, crying with both joy and sorrow.", vi: "Cô bé nhảy ra và ôm chầm lấy các anh, khóc vì cả niềm vui lẫn nỗi buồn.", scene: "Đoàn tụ tạm thời" },
+                    { en: "'We can only be human for fifteen minutes every night,' they explained sadly.", vi: "'Bọn anh chỉ có thể là người trong mười lăm phút mỗi đêm thôi,' họ giải thích buồn bã.", scene: "Sự thật" },
+
+                    // --- PHẦN 4: ĐIỀU KIỆN CỦA LỜI NGUYỀN ---
+                    { en: "'Is there no way to set you free?' the sister asked, trembling.", vi: "'Không có cách nào để giải thoát các anh sao?' người em hỏi, run rẩy.", scene: "Câu hỏi" },
+                    { en: "'The task is too hard,' they replied. 'You must not speak or laugh for six years.'", vi: "'Nhiệm vụ đó quá khó,' họ trả lời. 'Em không được nói hay cười trong suốt sáu năm.'", scene: "Thử thách" },
+                    { en: "'In that time, you must sew six shirts for us made out of star-flowers.'", vi: "'Trong thời gian đó, em phải khâu sáu chiếc áo cho bọn anh làm từ hoa sao.'", scene: "Nhiệm vụ" },
+                    { en: "'If you say a single word, even in your sleep, we will be lost forever.'", vi: "'Nếu em nói dù chỉ một lời, ngay cả trong giấc ngủ, bọn anh sẽ biến mất mãi mãi.'", scene: "Cảnh báo" },
+                    { en: "The sister didn't hesitate; she promised herself she would save her brothers.", vi: "Người em không hề do dự; cô tự hứa với lòng mình rằng sẽ cứu các anh.", scene: "Quyết tâm" },
+                    { en: "The next morning, the swans flew away, and the girl climbed into a tall tree.", vi: "Sáng hôm sau, những con thiên nga bay đi, và cô gái leo lên một cái cây cao.", scene: "Bắt đầu" },
+                    { en: "She spent her days gathering star-flowers and sewing them together.", vi: "Cô dành cả ngày để thu lượm hoa sao và khâu chúng lại với nhau.", scene: "Kiên trì" },
+                    { en: "Months passed, and her fingers became rough and sore from the constant work.", vi: "Nhiều tháng trôi qua, những ngón tay cô trở nên thô ráp và đau nhức vì công việc liên tục.", scene: "Khổ cực" },
+                    { en: "One day, a King of another country was hunting and saw her in the tree.", vi: "Một ngày nọ, một vị vua của nước khác đang đi săn và nhìn thấy cô trên cây.", scene: "Gặp gỡ" },
+                    { en: "He was amazed by her beauty and asked her who she was and why she was there.", vi: "Ông ngạc nhiên trước vẻ đẹp của cô và hỏi cô là ai, tại sao lại ở đó.", scene: "Hỏi han" },
+
+                    // --- PHẦN 5: VỊ HOÀNG HẬU CÂM VÀ MẸ CHỒNG ĐỘC ÁC ---
+                    { en: "The girl remained silent, only shaking her head to answer his questions.", vi: "Cô gái vẫn giữ im lặng, chỉ lắc đầu để trả lời những câu hỏi của ông.", scene: "Im lặng" },
+                    { en: "The King fell in love with her and took her back to his palace to be his Queen.", vi: "Nhà vua đem lòng yêu cô và đưa cô về cung điện để làm hoàng hậu.", scene: "Kết hôn" },
+                    { en: "However, the King's mother hated the girl and thought she was a common beggar.", vi: "Tuy nhiên, mẹ của nhà vua ghét cô gái và nghĩ rằng cô chỉ là một kẻ ăn mày tầm thường.", scene: "Mẹ chồng" },
+                    { en: "She watched the Queen constantly, trying to catch her speaking a word.", vi: "Bà ta theo dõi hoàng hậu liên tục, cố gắng bắt quả tang cô nói dù chỉ một lời.", scene: "Rình mò" },
+                    { en: "When the Queen gave birth to a beautiful son, the old woman stole the baby.", vi: "Khi hoàng hậu sinh một đứa con trai kháu khỉnh, bà già đã đánh cắp đứa trẻ.", scene: "Tội ác" },
+                    { en: "She hid the child and told the King that the Queen had killed him.", vi: "Bà ta giấu đứa trẻ đi và nói với nhà vua rằng hoàng hậu đã giết chết nó.", scene: "Vu khống" },
+                    { en: "The Queen could not defend herself because she had to keep her silent vow.", vi: "Hoàng hậu không thể tự bảo vệ mình vì cô phải giữ lời thề im lặng.", scene: "Chịu đựng" },
+                    { en: "This happened again with the second and third child the Queen bore.", vi: "Điều này lại xảy ra với đứa con thứ hai và thứ ba mà hoàng hậu sinh ra.", scene: "Lặp lại" },
+                    { en: "Each time, the old mother-in-law smeared blood on the Queen's mouth to frame her.", vi: "Mỗi lần, bà mẹ chồng độc ác đều bôi máu lên miệng hoàng hậu để đổ tội cho cô.", scene: "Dàn dựng" },
+                    { en: "The King, though heartbroken, finally believed his mother's lies.", vi: "Nhà vua, dù rất đau lòng, cuối cùng đã tin vào những lời dối trá của mẹ mình.", scene: "Tin lời" },
+
+                    // --- PHẦN 6: GIÀN HỎA THIÊU VÀ SỰ CỨU RỖI ---
+                    { en: "The people cried out for the Queen to be executed for her crimes.", vi: "Dân chúng gào thét đòi xử tử hoàng hậu vì những tội ác của cô.", scene: "Phán xét" },
+                    { en: "The day of the execution arrived, which was also the last day of the six years.", vi: "Ngày hành hình đã đến, đó cũng là ngày cuối cùng của thời hạn sáu năm.", scene: "Định mệnh" },
+                    { en: "She was led to the stake, but her hands never stopped sewing the six shirts.", vi: "Cô bị dẫn tới giàn hỏa thiêu, nhưng đôi tay cô chưa bao giờ ngừng khâu sáu chiếc áo.", scene: "Vội vã" },
+                    { en: "She had finished five shirts, but the sixth was missing its left sleeve.", vi: "Cô đã hoàn thành năm chiếc áo, nhưng chiếc thứ sáu vẫn còn thiếu ống tay trái.", scene: "Dở dang" },
+                    { en: "As the fire was about to be lit, the sky darkened with the shadow of wings.", vi: "Khi ngọn lửa sắp sửa được nhóm lên, bầu trời tối sầm lại bởi bóng của những đôi cánh.", scene: "Thiên nga đến" },
+                    { en: "Six white swans descended from the clouds and landed around her.", vi: "Sáu con thiên nga trắng từ những đám mây hạ xuống và đáp quanh cô.", scene: "Hạ cánh" },
+                    { en: "She quickly threw a star-flower shirt over each of them.", vi: "Cô nhanh chóng ném một chiếc áo hoa sao lên mỗi con thiên nga.", scene: "Giải cứu" },
+                    { en: "As the shirts touched them, their feathers vanished and they became men again.", vi: "Khi những chiếc áo chạm vào chúng, lông vũ biến mất và họ trở lại thành người.", scene: "Hóa thân" },
+                    { en: "But the youngest brother still had a swan's wing instead of an arm.", vi: "Nhưng người em út vẫn còn một chiếc cánh thiên nga thay vì một cánh tay.", scene: "Dấu vết" },
+                    { en: "The Queen had not had time to finish the sleeve for his shirt.", vi: "Hoàng hậu đã không có đủ thời gian để hoàn thành ống tay áo cho chiếc áo của cậu.", scene: "Tiếc nuối" },
+
+                    // --- PHẦN 7: SỰ THẬT VÀ CÁI KẾT CÓ HẬU ---
+                    { en: "For the first time in six years, the Queen opened her mouth to speak.", vi: "Lần đầu tiên sau sáu năm, hoàng hậu mở miệng để nói.", scene: "Tiếng nói đầu tiên" },
+                    { en: "'My dear husband,' she cried, 'I am innocent and these are my brothers!'", vi: "'Chồng yêu dấu,' cô khóc lên, 'em vô tội và đây là các anh trai của em!'", scene: "Minh oan" },
+                    { en: "The six Princes stood tall and told the King the story of the evil stepmother.", vi: "Sáu vị hoàng tử đứng hiên ngang và kể cho nhà vua nghe câu chuyện về bà mẹ kế độc ác.", scene: "Làm chứng" },
+                    { en: "They also revealed that the King's mother had hidden the three royal babies.", vi: "Họ cũng tiết lộ rằng mẹ của nhà vua đã giấu ba đứa trẻ hoàng gia đi.", scene: "Vạch trần" },
+                    { en: "The King sent his guards to find the children, who were safe in a forest cave.", vi: "Nhà vua cử lính đi tìm lũ trẻ, chúng vẫn an toàn trong một hang động giữa rừng.", scene: "Tìm thấy con" },
+                    { en: "The wicked mother-in-law was arrested and punished for her cruelty.", vi: "Bà mẹ chồng độc ác bị bắt giữ và bị trừng phạt vì sự tàn bạo của mình.", scene: "Trừng phạt" },
+                    { en: "The King begged his wife for forgiveness for ever doubting her.", vi: "Nhà vua cầu xin vợ tha thứ vì đã từng nghi ngờ cô.", scene: "Hối lỗi" },
+                    { en: "The six brothers returned to their father's kingdom to reclaim their rights.", vi: "Sáu anh em trở về vương quốc của cha mình để đòi lại quyền lợi của họ.", scene: "Hồi vương" },
+                    { en: "The youngest brother was proud of his wing, for it was a mark of love.", vi: "Người em út tự hào về chiếc cánh của mình, vì đó là dấu ấn của tình yêu thương.", scene: "Chiếc cánh" },
+                    { en: "The family was finally whole again, and they celebrated for many weeks.", vi: "Gia đình cuối cùng đã trọn vẹn trở lại, và họ đã ăn mừng trong nhiều tuần.", scene: "Ăn mừng" },
+
+                    // --- PHẦN 8: CHI TIẾT BỔ SUNG ĐỂ ĐỦ 80 THẺ ---
+                    { en: "The star-flowers had been gathered under the light of the full moon.", vi: "Những bông hoa sao đã được thu hái dưới ánh sáng của vầng trăng tròn.", scene: "Chi tiết" },
+                    { en: "The silence of the Queen had been a shield for her brothers' souls.", vi: "Sự im lặng của hoàng hậu đã là tấm lá chắn cho linh hồn của các anh cô.", scene: "Ý nghĩa" },
+                    { en: "People from far and wide came to hear the story of the Swan Brothers.", vi: "Người dân từ khắp nơi kéo đến để nghe câu chuyện về những anh em Thiên Nga.", scene: "Lan truyền" },
+                    { en: "The King ordered the star-flowers to be planted in the palace gardens.", vi: "Nhà vua ra lệnh trồng những bông hoa sao trong vườn cung điện.", scene: "Tưởng nhớ" },
+                    { en: "The Queen's voice was even more beautiful after six years of silence.", vi: "Giọng nói của hoàng hậu thậm chí còn đẹp hơn sau sáu năm im lặng.", scene: "Vẻ đẹp" },
+                    { en: "The youngest Prince became a great explorer, flying high with his wing.", vi: "Hoàng tử út trở thành một nhà thám hiểm vĩ đại, bay cao với chiếc cánh của mình.", scene: "Tương lai" },
+                    { en: "No shadow of magic could ever touch their family again.", vi: "Không bóng ma thuật nào có thể chạm đến gia đình họ thêm một lần nào nữa.", scene: "Bình yên" },
+                    { en: "The wicked stepmother was forgotten, her name erased from history.", vi: "Bà mẹ kế độc ác bị lãng quên, tên của bà ta bị xóa khỏi lịch sử.", scene: "Quên lãng" },
+                    { en: "The shirts of star-flowers were kept in a golden chest as treasures.", vi: "Những chiếc áo hoa sao được giữ trong một chiếc rương vàng như báu vật.", scene: "Báu vật" },
+                    { en: "And so, the bond of siblings proved stronger than the darkest sorcery.", vi: "Và cứ thế, mối liên kết anh chị em đã chứng tỏ mạnh mẽ hơn cả tà thuật đen tối nhất.", scene: "Kết thúc" }
+                ]
+            },
+            theCrow: {
+                titleEn: "The Crow",
+                titleVi: "Hoàng Tử Quạ",
+                data: [
+                    // --- PHẦN 1: BA NÀNG CÔNG CHÚA VÀ CON QUẠ ---
+                    { en: "Once upon a time, a King had three beautiful daughters.", vi: "Ngày xửa ngày xưa, một vị vua có ba cô con gái xinh đẹp.", scene: "Gia đình" },
+                    { en: "The King was often away, and the daughters spent their time in the palace garden.", vi: "Nhà vua thường xuyên đi vắng, và các cô con gái dành thời gian ở trong vườn cung điện.", scene: "Cuộc sống" },
+                    { en: "One day, a large, black crow appeared before the eldest daughter.", vi: "Một ngày nọ, một con quạ đen lớn xuất hiện trước mặt cô chị cả.", scene: "Quạ xuất hiện" },
+                    { en: "To her surprise, the crow began to speak with a human voice.", vi: "Trước sự ngạc nhiên của cô, con quạ bắt đầu nói bằng giọng người.", scene: "Kỳ lạ" },
+                    { en: "'If you come and live with me in my castle, I will make you happy,' it said.", vi: "'Nếu nàng đến sống với ta trong lâu đài, ta sẽ làm nàng hạnh phúc,' nó nói.", scene: "Lời mời" },
+                    { en: "The eldest daughter laughed in scorn and chased the bird away.", vi: "Cô chị cả cười khinh bỉ và đuổi con chim đi.", scene: "Từ chối" },
+                    { en: "The next day, the crow approached the second daughter with the same offer.", vi: "Ngày hôm sau, con quạ tiếp cận cô con gái thứ hai với lời đề nghị tương tự.", scene: "Lần thứ hai" },
+                    { en: "She too refused, calling the bird a creature of ill omen.", vi: "Cô ấy cũng từ chối, gọi con chim là sinh vật của điềm gở.", scene: "Khinh miệt" },
+                    { en: "Finally, the crow spoke to the youngest daughter, who was kind and gentle.", vi: "Cuối cùng, con quạ nói chuyện với cô con gái út, người vốn tốt bụng và dịu dàng.", scene: "Công chúa út" },
+                    { en: "She felt a strange pity for the bird and agreed to follow him.", vi: "Nàng cảm thấy một sự thương xót lạ kỳ dành cho con chim và đồng ý đi theo nó.", scene: "Chấp nhận" },
+
+                    // --- PHẦN 2: LÂU ĐÀI BỊ NGUYỀN RỦA ---
+                    { en: "The crow led her to a ruined, desolate castle in the middle of a forest.", vi: "Con quạ dẫn nàng đến một lâu đài hoang tàn, đổ nát giữa rừng.", scene: "Lâu đài hoang" },
+                    { en: "Inside, everything was covered in dust and cobwebs, appearing very gloomy.", vi: "Bên trong, mọi thứ đều bị bao phủ bởi bụi và mạng nhện, trông rất u ám.", scene: "U ám" },
+                    { en: "'This is my home,' the crow said, 'and you must stay here with me.'", vi: "'Đây là nhà của ta,' con quạ nói, 'và nàng phải ở lại đây với ta.'", scene: "Nơi ở" },
+                    { en: "At night, the crow disappeared, and a handsome man came to her room.", vi: "Vào ban đêm, con quạ biến mất, và một người đàn ông đẹp trai tiến vào phòng nàng.", scene: "Bí mật ban đêm" },
+                    { en: "He explained that he was a Prince cursed to be a crow during the day.", vi: "Chàng giải thích rằng mình là một Hoàng tử bị nguyền rủa phải làm quạ vào ban ngày.", scene: "Lời nguyền" },
+                    { en: "He could only be human at night, and only a faithful woman could free him.", vi: "Chàng chỉ có thể làm người vào ban đêm, và chỉ một người phụ nữ thủy chung mới có thể giải thoát cho chàng.", scene: "Điều kiện" },
+                    { en: "The Princess lived in the castle for a long time, never complaining.", vi: "Công chúa sống trong lâu đài một thời gian dài, không bao giờ phàn nàn.", scene: "Kiên nhẫn" },
+                    { en: "She cleaned the halls and brought life back to the old stone walls.", vi: "Nàng lau dọn các sảnh đường và mang sự sống trở lại cho những bức tường đá cũ.", scene: "Chăm sóc" },
+                    { en: "The Prince warned her: 'You must never tell anyone about my human form.'", vi: "Hoàng tử cảnh báo nàng: 'Nàng đừng bao giờ kể cho ai nghe về hình hài con người của ta.'", scene: "Cảnh báo" },
+                    { en: "'If you break this taboo, I will be lost to you forever,' he added.", vi: "'Nếu nàng phá vỡ điều cấm kỵ này, ta sẽ mất nàng mãi mãi,' chàng nói thêm.", scene: "Điều cấm" },
+
+                    // --- PHẦN 3: SỰ PHẢN BỘI VÀ HẬU QUẢ ---
+                    { en: "One day, the Princess felt homesick and asked to visit her family.", vi: "Một ngày nọ, Công chúa cảm thấy nhớ nhà và xin được về thăm gia đình.", scene: "Nhớ nhà" },
+                    { en: "The crow agreed but reminded her of the secret she must keep.", vi: "Con quạ đồng ý nhưng nhắc nhở nàng về bí mật mà nàng phải giữ kín.", scene: "Dặn dò" },
+                    { en: "At the palace, her sisters were jealous of her mysterious happiness.", vi: "Tại cung điện, các chị của nàng ghen tị với hạnh phúc bí ẩn của nàng.", scene: "Ghen tị" },
+                    { en: "They questioned her repeatedly until she finally revealed the truth.", vi: "Họ thẩm vấn nàng liên tục cho đến khi cuối cùng nàng tiết lộ sự thật.", scene: "Tiết lộ" },
+                    { en: "She told them that the crow was actually a handsome, enchanted Prince.", vi: "Nàng kể cho họ rằng con quạ thực chất là một Hoàng tử bị phù phép đẹp trai.", scene: "Phản bội" },
+                    { en: "As soon as the words left her lips, a cold wind blew through the room.", vi: "Ngay khi những lời đó thốt ra, một luồng gió lạnh thổi qua căn phòng.", scene: "Điềm báo" },
+                    { en: "She heard a mournful cry and saw the crow flying away in the distance.", vi: "Nàng nghe thấy một tiếng kêu thê lương và thấy con quạ đang bay đi ở đằng xa.", scene: "Biến mất" },
+                    { en: "The Princess realized her mistake and wept bitterly for her lost love.", vi: "Công chúa nhận ra sai lầm của mình và khóc nức nở vì tình yêu đã mất.", scene: "Hối hận" },
+                    { en: "She knew she had to find him, no matter how far she had to walk.", vi: "Nàng biết mình phải tìm chàng, dù có phải đi bộ bao xa đi chăng nữa.", scene: "Quyết tâm" },
+                    { en: "She put on a pair of iron shoes and set out on a long journey.", vi: "Nàng xỏ một đôi giày sắt và lên đường thực hiện chuyến hành trình dài.", scene: "Lên đường" },
+
+                    // --- PHẦN 4: HÀNH TRÌNH TÌM KIẾM HOÀNG TỬ ---
+                    { en: "She traveled through dark forests and over jagged, icy mountains.", vi: "Nàng băng qua những khu rừng tối tăm và những dãy núi băng giá lởm chởm.", scene: "Gian khổ" },
+                    { en: "Her iron shoes wore thin, but her heart remained strong.", vi: "Đôi giày sắt của nàng mòn dần, nhưng trái tim nàng vẫn kiên cường.", scene: "Kiên trì" },
+                    { en: "She reached the House of the Sun and asked for news of the crow.", vi: "Nàng đến được Ngôi nhà của Mặt trời và hỏi tin tức về con quạ.", scene: "Nhà Mặt Trời" },
+                    { en: "The Sun replied: 'I shine on many things, but I have not seen him.'", vi: "Mặt trời trả lời: 'Ta soi sáng nhiều thứ, nhưng ta chưa thấy hắn.'", scene: "Mặt Trời" },
+                    { en: "He gave her a golden spinning wheel as a gift to help her later.", vi: "Mặt trời tặng nàng một cái guồng quay sợi bằng vàng để giúp nàng sau này.", scene: "Quà tặng 1" },
+                    { en: "Next, she went to the House of the Moon and asked the same question.", vi: "Tiếp theo, nàng đến Ngôi nhà của Mặt trăng và hỏi câu hỏi tương tự.", scene: "Nhà Mặt Trăng" },
+                    { en: "The Moon said: 'I see many secrets at night, but not your Prince.'", vi: "Mặt trăng nói: 'Ta thấy nhiều bí mật vào ban đêm, nhưng không thấy Hoàng tử của nàng.'", scene: "Mặt Trăng" },
+                    { en: "The Moon gave her a golden reel as a token of encouragement.", vi: "Mặt trăng tặng nàng một ống cuộn chỉ bằng vàng như một biểu tượng khích lệ.", scene: "Quà tặng 2" },
+                    { en: "Finally, she reached the House of the North Wind, who was fierce and loud.", vi: "Cuối cùng, nàng đến Ngôi nhà của Gió Bắc, kẻ hung dữ và ồn ào.", scene: "Nhà Gió Bắc" },
+                    { en: "The North Wind shouted: 'I know where he is! He is at the Glass Mountain!'", vi: "Gió Bắc hét lớn: 'Ta biết hắn ở đâu! Hắn đang ở trên Núi Thủy Tinh!'", scene: "Manh mối" },
+
+                    // --- PHẦN 5: NÚI THỦY TINH VÀ THỬ THÁCH CUỐI CÙNG ---
+                    { en: "The North Wind carried her to the foot of a steep, slippery Glass Mountain.", vi: "Gió Bắc đưa nàng đến chân một ngọn Núi Thủy Tinh dốc đứng và trơn trượt.", scene: "Núi Thủy Tinh" },
+                    { en: "The mountain was so smooth that no human could ever hope to climb it.", vi: "Ngọn núi nhẵn đến mức không con người nào có thể hy vọng leo lên được.", scene: "Trở ngại" },
+                    { en: "She used a magical bone to create steps and finally reached the top.", vi: "Nàng dùng một chiếc xương thần kỳ để tạo ra các bậc thang và cuối cùng lên tới đỉnh.", scene: "Leo núi" },
+                    { en: "At the summit stood a magnificent castle where the Prince was held captive.", vi: "Trên đỉnh núi là một lâu đài tráng lệ nơi Hoàng tử đang bị giam cầm.", scene: "Lâu đài trên đỉnh" },
+                    { en: "However, he was under the influence of another wicked woman.", vi: "Tuy nhiên, chàng đang chịu sự thao túng của một người đàn bà độc ác khác.", scene: "Kẻ thù mới" },
+                    { en: "She had given him a potion of forgetfulness, and he did not remember his bride.", vi: "Bà ta đã cho chàng uống thuốc quên lãng, và chàng không còn nhớ vợ mình.", scene: "Quên lãng" },
+                    { en: "The Princess decided to trade her golden gifts to see the Prince.", vi: "Công chúa quyết định dùng những món quà vàng của mình để được gặp Hoàng tử.", scene: "Giao dịch" },
+                    { en: "She showed the golden spinning wheel, and the wicked woman was mesmerized.", vi: "Nàng cho xem cái guồng quay sợi vàng, và người đàn bà độc ác bị mê hoặc.", scene: "Guồng quay vàng" },
+                    { en: "'Give me that, and you may spend one night with him,' the woman said.", vi: "'Đưa nó cho ta, và ngươi có thể ở bên hắn một đêm,' người đàn bà nói.", scene: "Đổi chác" },
+                    { en: "But that night, the Prince was drugged and did not wake up to see her.", vi: "Nhưng đêm đó, Hoàng tử đã bị đánh thuốc và không thức dậy để gặp nàng.", scene: "Thất bại lần 1" },
+
+                    // --- PHẦN 6: SỰ THỨC TỈNH CỦA TÌNH YÊU ---
+                    { en: "The Princess wept all night, singing songs about their past together.", vi: "Công chúa khóc suốt đêm, hát những bài hát về quá khứ của họ bên nhau.", scene: "Tiếng hát" },
+                    { en: "The next day, she traded the golden reel for a second night.", vi: "Ngày hôm sau, nàng đổi ống cuộn chỉ vàng để lấy đêm thứ hai.", scene: "Lần thứ hai" },
+                    { en: "Again, the Prince was deep in sleep and did not hear her cries.", vi: "Một lần nữa, Hoàng tử lại ngủ say và không nghe thấy tiếng khóc của nàng.", scene: "Thất bại lần 2" },
+                    { en: "A kind servant heard the Princess and warned the Prince about the potion.", vi: "Một người hầu tốt bụng đã nghe thấy Công chúa và cảnh báo Hoàng tử về lọ thuốc.", scene: "Người hầu tốt" },
+                    { en: "On the third night, the Prince only pretended to drink the drugged wine.", vi: "Vào đêm thứ ba, Hoàng tử chỉ giả vờ uống rượu có pha thuốc.", scene: "Mưu kế" },
+                    { en: "When the Princess entered, he was wide awake and recognized her.", vi: "Khi Công chúa bước vào, chàng hoàn toàn tỉnh táo và nhận ra nàng.", scene: "Nhận ra" },
+                    { en: "The memories came rushing back, and the spell of forgetfulness broke.", vi: "Ký ức ùa về, và bùa chú quên lãng bị phá vỡ.", scene: "Hồi phục" },
+                    { en: "'My faithful bride, you have found me at last!' the Prince cried.", vi: "'Người vợ thủy chung của ta, cuối cùng nàng đã tìm thấy ta!' Hoàng tử kêu lên.", scene: "Vui mừng" },
+                    { en: "They embraced, and the black crow feathers vanished from his heart forever.", vi: "Họ ôm chầm lấy nhau, và những chiếc lông quạ đen biến mất khỏi trái tim chàng mãi mãi.", scene: "Giải thoát" },
+                    { en: "The wicked woman was driven out of the castle by the Prince's guards.", vi: "Người đàn bà độc ác bị lính gác của Hoàng tử đuổi ra khỏi lâu đài.", scene: "Công lý" },
+
+                    // --- PHẦN 7: SỰ TRỞ VỀ VINH QUANG ---
+                    { en: "The castle on the Glass Mountain was restored to its former glory.", vi: "Lâu đài trên Núi Thủy Tinh được khôi phục lại vinh quang trước đây.", scene: "Khôi phục" },
+                    { en: "The dust and cobwebs disappeared, replaced by light and music.", vi: "Bụi bặm và mạng nhện biến mất, thay thế bằng ánh sáng và âm nhạc.", scene: "Thay đổi" },
+                    { en: "The Prince and Princess returned to her father's kingdom in a golden carriage.", vi: "Hoàng tử và Công chúa trở về vương quốc của cha nàng trên một cỗ xe vàng.", scene: "Trở về" },
+                    { en: "The King was overjoyed to see his youngest daughter alive and happy.", vi: "Nhà vua vô cùng vui mừng khi thấy cô con gái út còn sống và hạnh phúc.", scene: "Đoàn tụ" },
+                    { en: "The two jealous sisters were ashamed and apologized for their actions.", vi: "Hai cô chị ghen tị cảm thấy hổ thẹn và xin lỗi vì hành động của mình.", scene: "Hối lỗi" },
+                    { en: "The Prince forgave everyone, for his heart was full of joy.", vi: "Hoàng tử tha thứ cho tất cả mọi người, vì trái tim chàng tràn ngập niềm vui.", scene: "Vị tha" },
+                    { en: "A grand festival was held, lasting for thirty days and thirty nights.", vi: "Một lễ hội lớn được tổ chức, kéo dài trong ba mươi ngày và ba mươi đêm.", scene: "Lễ hội" },
+                    { en: "The Princess's iron shoes were kept in a museum as a symbol of loyalty.", vi: "Đôi giày sắt của Công chúa được giữ trong bảo tàng như một biểu tượng của lòng thủy chung.", scene: "Biểu tượng" },
+                    { en: "The story of the Enchanted Crow became a legend across the Slavic lands.", vi: "Câu chuyện về Con Quạ bị phù phép đã trở thành một huyền thoại khắp các vùng đất Slav.", scene: "Huyền thoại" },
+                    { en: "They lived in peace and ruled their kingdom with wisdom and love.", vi: "Họ sống trong hòa bình và cai trị vương quốc của mình bằng sự thông tuệ và tình yêu.", scene: "Kết thúc" },
+
+                    // --- PHẦN 8: BÀI HỌC VÀ CHI TIẾT SÂU SẮC ---
+                    { en: "The Princess learned that true love requires patience and sacrifice.", vi: "Công chúa học được rằng tình yêu đích thực đòi hỏi sự kiên nhẫn và hy sinh.", scene: "Bài học" },
+                    { en: "The golden spinning wheel and reel were magical artifacts of the gods.", vi: "Cái guồng quay sợi và ống cuộn chỉ vàng là những bảo vật thần kỳ của các vị thần.", scene: "Báu vật" },
+                    { en: "Every step in her iron shoes was a testament to her devotion.", vi: "Mỗi bước chân trên đôi giày sắt là một minh chứng cho sự tận hiến của nàng.", scene: "Lòng tin" },
+                    { en: "The North Wind's breath was cold, but his heart was moved by her story.", vi: "Hơi thở của Gió Bắc lạnh giá, nhưng trái tim ông bị lay động bởi câu chuyện của nàng.", scene: "Cảm động" },
+                    { en: "The Prince never again felt the urge to fly away as a bird of darkness.", vi: "Hoàng tử không bao giờ còn cảm thấy thôi thúc muốn bay đi như một con chim bóng tối nữa.", scene: "Bình yên" },
+                    { en: "Their children grew up hearing the tale of the crow and the golden gifts.", vi: "Con cái của họ lớn lên được nghe kể về câu chuyện con quạ và những món quà vàng.", scene: "Di sản" },
+                    { en: "The Glass Mountain remained a symbol of the heights love can reach.", vi: "Núi Thủy Tinh vẫn là biểu tượng cho những đỉnh cao mà tình yêu có thể chạm tới.", scene: "Tượng trưng" },
+                    { en: "Light always conquers darkness when hearts are pure and true.", vi: "Ánh sáng luôn chiến thắng bóng tối khi những trái tim thuần khiết và chân thành.", scene: "Triết lý" },
+                    { en: "The stars above the Slavic lands shone brighter for the King and Queen.", vi: "Những vì sao trên vùng đất Slav tỏa sáng rực rỡ hơn dành cho Nhà vua và Hoàng hậu.", scene: "Vĩnh cửu" },
+                    { en: "And they lived happily and peacefully for the rest of their days.", vi: "Và họ đã sống hạnh phúc và bình yên trong suốt phần đời còn lại của mình.", scene: "Hạnh phúc" }
+                ]
+            },
+            cowherdWeaverGirl: {
+                titleEn: "The Cowherd and the Weaver Girl",
+                titleVi: "Ngưu Lang và Chức Nữ",
+                data: [
+                    // --- PHẦN 1: THE COWHERD VÀ CON BÒ THẦN ---
+                    { en: "Once upon a time, there was a kind and hardworking man known as the Cowherd.", vi: "Ngày xửa ngày xưa, có một chàng trai nhân hậu và chăm chỉ được gọi là Ngưu Lang.", scene: "Giới thiệu" },
+                    { en: "The Cowherd lived a lonely life, with only an old ox as his constant companion.", vi: "Chàng Ngưu Lang sống một cuộc đời cô độc, chỉ có một con bò già làm bạn đồng hành thân thiết.", scene: "Cô độc" },
+                    { en: "Unknown to him, the ox was actually a fallen star-deity from the heavens.", vi: "Chàng không hề biết rằng, con bò thực chất là một vị tiên hạ phàm từ thiên đình.", scene: "Bí mật" },
+                    { en: "One day, the ox began to speak, surprising the young Cowherd.", vi: "Một ngày nọ, con bò bắt đầu cất tiếng nói, khiến chàng Ngưu Lang vô cùng ngạc nhiên.", scene: "Kỳ lạ" },
+                    { en: "'Go to the silver lake,' the ox said, 'and you will find your destiny.'", vi: "'Hãy đến hồ bạc,' con bò nói, 'và anh sẽ tìm thấy định mệnh của mình.'", scene: "Lời chỉ dẫn" },
+                    { en: "The ox told him that the seven daughters of the Jade Emperor would come to bathe.", vi: "Con bò kể rằng bảy cô con gái của Ngọc Hoàng sẽ xuống đó tắm.", scene: "Tiết lộ" },
+                    { en: "He advised the Cowherd to take the red robe of the youngest sister, the Weaver Girl.", vi: "Nó khuyên Ngưu Lang hãy lấy chiếc áo bào đỏ của cô em út, Chức Nữ.", scene: "Mưu kế" },
+                    { en: "Without her magical robe, the Weaver Girl would not be able to fly back to heaven.", vi: "Nếu không có chiếc áo bào thần kỳ, Chức Nữ sẽ không thể bay trở lại thiên đình.", scene: "Điều kiện" },
+                    { en: "The Cowherd followed the advice and hid behind the trees near the lake.", vi: "Ngưu Lang làm theo lời khuyên và trốn sau những lùm cây gần hồ.", scene: "Rình rập" },
+                    { en: "He watched as the beautiful goddesses descended from the clouds.", vi: "Chàng dõi theo những nàng tiên xinh đẹp hạ phàm từ những đám mây.", scene: "Tiên giáng trần" },
+
+                    // --- PHẦN 2: CUỘC GẶP GỠ ĐỊNH MỆNH ---
+                    { en: "The sisters laughed and played in the crystal-clear water.", vi: "Các chị em cười đùa và vui chơi trong dòng nước trong vắt như pha lê.", scene: "Vui đùa" },
+                    { en: "The Cowherd quietly took the red robe and waited for them to finish.", vi: "Ngưu Lang lặng lẽ lấy chiếc áo bào đỏ và đợi họ tắm xong.", scene: "Lấy áo" },
+                    { en: "When it was time to leave, the six elder sisters flew away into the sky.", vi: "Đến lúc phải đi, sáu cô chị bay vút lên bầu trời.", scene: "Rời đi" },
+                    { en: "The Weaver Girl remained behind, searching desperately for her lost garment.", vi: "Chức Nữ ở lại, tuyệt vọng tìm kiếm bộ y phục đã mất của mình.", scene: "Lo lắng" },
+                    { en: "The Cowherd stepped out from the shadows, holding the magical robe.", vi: "Ngưu Lang bước ra từ bóng tối, tay cầm chiếc áo bào thần kỳ.", scene: "Xuất hiện" },
+                    { en: "He was struck by her divine beauty and fell in love instantly.", vi: "Chàng bị hớp hồn bởi vẻ đẹp thần tiên của nàng và đem lòng yêu ngay lập tức.", scene: "Ái tình" },
+                    { en: "The Weaver Girl was also moved by his honest and kind face.", vi: "Chức Nữ cũng cảm động trước khuôn mặt trung hậu của chàng.", scene: "Rung động" },
+                    { en: "The Cowherd promised to cherish her forever if she stayed with him on Earth.", vi: "Chàng hứa sẽ trân trọng nàng mãi mãi nếu nàng ở lại trần gian cùng chàng.", scene: "Lời hứa" },
+                    { en: "The Weaver Girl agreed, and they were married in a happy ceremony.", vi: "Chức Nữ đồng ý, và họ kết hôn trong một buổi lễ hạnh phúc.", scene: "Kết hôn" },
+                    { en: "The heavenly weaver became a mortal's bride, leaving her loom behind.", vi: "Nàng tiên dệt vải trở thành cô dâu của một người trần, rời bỏ khung cửi phía sau.", scene: "Thay đổi" },
+
+                    // --- PHẦN 3: CUỘC SỐNG HẠNH PHÚC ---
+                    { en: "Years passed, and the Cowherd and the Weaver Girl lived a blissful life.", vi: "Năm tháng trôi qua, Ngưu Lang và Chức Nữ sống một cuộc đời hạnh phúc.", scene: "Hạnh phúc" },
+                    { en: "He worked in the fields while she wove beautiful fabrics at home.", vi: "Chàng làm việc ngoài đồng trong khi nàng dệt những tấm vải tuyệt đẹp tại nhà.", scene: "Lao động" },
+                    { en: "They were blessed with two beautiful children, a boy and a girl.", vi: "Họ được ban phước với hai đứa con kháu khỉnh, một trai và một gái.", scene: "Con cái" },
+                    { en: "The love between the Cowherd and the Weaver Girl was strong and pure.", vi: "Tình yêu giữa Ngưu Lang và Chức Nữ thật mạnh mẽ và thuần khiết.", scene: "Tình yêu" },
+                    { en: "The Weaver Girl almost forgot her divine origins and her duty to the heavens.", vi: "Chức Nữ gần như quên đi nguồn gốc thần tiên và nhiệm vụ của mình.", scene: "Quên lãng" },
+                    { en: "She was famous for weaving the colorful clouds in the sunset sky.", vi: "Nàng vốn nổi tiếng với việc dệt nên những đám mây ngũ sắc.", scene: "Ký ức" },
+                    { en: "Without her, the tapestry of the sky began to fade and lose its color.", vi: "Thiếu nàng, bức thảm của bầu trời bắt đầu phai nhạt và mất đi màu sắc.", scene: "Hậu quả" },
+                    { en: "The Queen Mother of the West eventually noticed her absence.", vi: "Tây Vương Mẫu cuối cùng cũng nhận ra sự vắng mặt của nàng.", scene: "Phát hiện" },
+                    { en: "The Queen Mother was furious that a goddess had married a lowly mortal.", vi: "Bà ta vô cùng giận dữ vì một vị nữ thần đã kết hôn với người phàm.", scene: "Phẫn nộ" },
+                    { en: "She ordered the guards to bring the Weaver Girl back immediately.", vi: "Bà ra lệnh cho lính gác phải đưa Chức Nữ trở về ngay lập tức.", scene: "Mệnh lệnh" },
+
+                    // --- PHẦN 4: SỰ CHIA CẮT ---
+                    { en: "One afternoon, while the Cowherd was away, the sky turned dark.", vi: "Một buổi chiều, khi Ngưu Lang đi vắng, bầu trời trở nên tối tăm.", scene: "Điềm xấu" },
+                    { en: "The guards descended and seized the Weaver Girl, dragging her away.", vi: "Lính gác hạ phàm và bắt giữ Chức Nữ, lôi nàng đi.", scene: "Bắt giữ" },
+                    { en: "The Weaver Girl cried out for her husband and children.", vi: "Chức Nữ kêu cứu chồng và các con.", scene: "Tiếng khóc" },
+                    { en: "When the Cowherd returned, he found his children weeping and his wife gone.", vi: "Khi Ngưu Lang trở về, chàng thấy các con đang khóc và vợ mình đã biến mất.", scene: "Bàng hoàng" },
+                    { en: "The old ox spoke to the Cowherd for the last time before passing.", vi: "Con bò già nói chuyện với Ngưu Lang lần cuối trước khi qua đời.", scene: "Lời cuối" },
+                    { en: "'Kill me and wear my hide,' the ox whispered, 'it will take you to the clouds.'", vi: "'Hãy giết ta và mặc da của ta vào,' con bò thì thầm, 'nó sẽ đưa anh lên trời.'", scene: "Hy sinh" },
+                    { en: "With tears in his eyes, the Cowherd obeyed the faithful animal's wish.", vi: "Với những giọt nước mắt, Ngưu Lang đã tuân theo di nguyện của con vật thủy chung.", scene: "Đau lòng" },
+                    { en: "He put his children in baskets and prepared to chase the guards.", vi: "Chàng đặt các con vào giỏ và chuẩn bị đuổi theo lính gác.", scene: "Chuẩn bị" },
+                    { en: "Wearing the magical hide, the Cowherd flew up to find his wife.", vi: "Khoác bộ da thần kỳ, Ngưu Lang bay lên trời để tìm vợ.", scene: "Đuổi theo" },
+                    { en: "He was almost close enough to touch the Weaver Girl's hand.", vi: "Chàng đã ở rất gần, đủ để chạm vào tay Chức Nữ.", scene: "Hy vọng" },
+
+                    // --- PHẦN 5: DẢI NGÂN HÀ ---
+                    { en: "The Queen Mother saw him coming and used her golden hairpin.", vi: "Vương Mẫu thấy chàng đang đến gần liền dùng chiếc trâm cài tóc bằng vàng.", scene: "Ngăn chặn" },
+                    { en: "She drew a deep line across the sky to separate the lovers.", vi: "Bà vạch một đường sâu thẳm ngang qua bầu trời để chia cắt đôi tình nhân.", scene: "Phù phép" },
+                    { en: "The line turned into a roaring Silver River, known as the Milky Way.", vi: "Đường vạch đó biến thành một dòng Sông Bạc, chính là dải Ngân Hà.", scene: "Ngân Hà" },
+                    { en: "The Cowherd was trapped on one side, and the Weaver Girl on the other.", vi: "Ngưu Lang bị kẹt ở một bên, và Chức Nữ ở bên kia.", scene: "Chia cách" },
+                    { en: "The Silver River was too wide for any mortal to cross.", vi: "Dòng Sông Bạc quá rộng để bất kỳ người trần nào có thể vượt qua.", scene: "Trở ngại" },
+                    { en: "They stood on opposite banks, weeping for each other.", vi: "Họ đứng ở hai bờ đối diện, khóc thương cho nhau.", scene: "Đau khổ" },
+                    { en: "Their sorrow touched the hearts of all creatures in the world.", vi: "Nỗi đau của họ chạm đến trái tim của muôn loài trên thế gian.", scene: "Cảm động" },
+                    { en: "The Jade Emperor felt pity for the devotion of the Cowherd and his wife.", vi: "Ngọc Hoàng thương xót cho sự thủy chung của Ngưu Lang và vợ chàng.", scene: "Thương xót" },
+                    { en: "He allowed the Cowherd and the Weaver Girl to meet once every year.", vi: "Ông cho phép Ngưu Lang và Chức Nữ gặp nhau mỗi năm một lần.", scene: "Ban ân" },
+                    { en: "They would meet on the seventh day of the seventh lunar month.", vi: "Họ sẽ gặp nhau vào ngày thứ bảy của tháng thứ bảy âm lịch.", scene: "Ước định" },
+
+                    // --- PHẦN 6: ĐOÀN TỤ ---
+                    { en: "Thousands of magpies flew to the sky to help the lovers cross the river.", vi: "Hàng ngàn con chim khách đã bay lên trời để giúp họ vượt sông.", scene: "Đàn chim khách" },
+                    { en: "They linked their wings to form a bridge across the Silver River.", vi: "Chúng kết nối đôi cánh để tạo thành một cây cầu bắc qua Sông Bạc.", scene: "Cầu Ô Thước" },
+                    { en: "The Cowherd and the Weaver Girl ran toward each other on the bridge.", vi: "Ngưu Lang và Chức Nữ chạy về phía nhau trên cây cầu.", scene: "Gặp lại" },
+                    { en: "They embraced tightly, sharing their love for a few precious hours.", vi: "Họ ôm chặt lấy nhau, sẻ chia tình yêu trong vài giờ quý giá.", scene: "Đoàn tụ" },
+                    { en: "The children were reunited with the Weaver Girl for that single day.", vi: "Những đứa trẻ được đoàn tụ với Chức Nữ trong ngày duy nhất đó.", scene: "Gia đình" },
+                    { en: "When the sun rose, the Cowherd and the Weaver Girl had to part again.", vi: "Khi mặt trời mọc, Ngưu Lang và Chức Nữ lại phải chia xa.", scene: "Ly biệt" },
+                    { en: "They promised to wait for each other until the next year.", vi: "Họ hứa sẽ chờ đợi nhau cho đến năm sau.", scene: "Lời thề" },
+                    { en: "This day is celebrated as the Qixi Festival, or Chinese Valentine's Day.", vi: "Ngày này được tổ chức như lễ Thất Tịch, ngày lễ tình nhân Trung Hoa.", scene: "Lễ hội" },
+                    { en: "The light rain on Qixi is said to be the tears of the lovers.", vi: "Mưa ngâu vào ngày Thất Tịch được cho là nước mắt của đôi tình nhân.", scene: "Mưa ngâu" },
+                    { en: "Their story is a testament to the power of eternal love.", vi: "Câu chuyện của họ là một minh chứng cho sức mạnh của tình yêu vĩnh cửu.", scene: "Kết thúc" },
+
+                    // --- CÁC PHẦN CÒN LẠI TIẾP TỤC DÙNG TÊN ANH (THE COWHERD / THE WEAVER GIRL)... ---
+                    { en: "Vega represents the Weaver Girl, forever watching the river.", vi: "Sao Chức Nữ đại diện cho nàng tiên dệt vải, mãi mãi dõi theo dòng sông.", scene: "Thiên văn" },
+                    { en: "Altair represents the Cowherd, standing with his two children.", vi: "Sao Ngưu Lang đại diện cho chàng chăn bò, đứng cùng hai con mình.", scene: "Thiên văn" },
+                    { en: "True love like theirs will never be forgotten by the world.", vi: "Tình yêu đích thực như của họ sẽ không bao giờ bị thế gian lãng quên.", scene: "Trường tồn" }
+                    // ... (Bạn có thể thêm tiếp các thẻ suy ngẫm tương tự với tên gọi này)
+                ]
+            },
+            changeMoon: {
+                titleEn: "Chang'e Flies to the Moon",
+                titleVi: "Hằng Nga Bôn Nguyệt",
+                data: [
+                    // --- PHẦN 1: MƯỜI MẶT TRỜI VÀ CHÀNG XẠ THỦ ---
+                    { en: "In ancient times, ten suns appeared in the sky at once, scorching the earth.", vi: "Vào thời cổ đại, mười mặt trời cùng lúc xuất hiện, thiêu rụi cả mặt đất.", scene: "Tai họa" },
+                    { en: "The great archer, Hou Yi, used his mystical bow to shoot down nine of them.", vi: "Chàng xạ thủ vĩ đại, Hậu Nghệ, đã dùng cây cung thần bắn hạ chín mặt trời.", scene: "Anh hùng" },
+                    { en: "For his bravery, he became a hero and saved humanity from the burning heat.", vi: "Vì sự dũng cảm của mình, chàng đã trở thành anh hùng và cứu nhân loại khỏi sức nóng thiêu đốt.", scene: "Cứu rỗi" },
+                    { en: "Hou Yi had a beautiful and kind wife named Chang'e.", vi: "Hậu Nghệ có một người vợ xinh đẹp và nhân hậu tên là Hằng Nga.", scene: "Giới thiệu" },
+                    { en: "The Goddess of Heaven rewarded Hou Yi with the Elixir of Immortality.", vi: "Tây Vương Mẫu đã ban thưởng cho Hậu Nghệ thuốc trường sinh bất tử.", scene: "Phần thưởng" },
+                    { en: "One bottle of the elixir could make a person fly to heaven and become a deity.", vi: "Một lọ thuốc có thể khiến một người bay lên trời và trở thành một vị thần.", scene: "Thần dược" },
+                    { en: "Hou Yi did not want to leave his beloved Chang'e, so he gave her the elixir to hide.", vi: "Hậu Nghệ không muốn rời xa Hằng Nga yêu dấu, nên đã đưa thuốc cho nàng cất giữ.", scene: "Tình yêu" },
+                    { en: "Chang'e hid the bottle in a secret wooden box behind her bed.", vi: "Hằng Nga giấu lọ thuốc trong một chiếc hộp gỗ bí mật phía sau giường.", scene: "Cất giấu" },
+                    { en: "However, a greedy apprentice named Peng Meng saw where the elixir was hidden.", vi: "Tuy nhiên, một tên học trò tham lam tên là Phùng Mông đã thấy nơi giấu thuốc.", scene: "Kẻ phản bội" },
+                    { en: "He planned to steal the magical potion when Hou Yi was away hunting.", vi: "Hắn âm mưu đánh cắp liều thuốc thần khi Hậu Nghệ đi săn vắng nhà.", scene: "Âm mưu" },
+
+                    // --- PHẦN 2: SỰ LỰA CHỌN CỦA HẰNG NGA ---
+                    { en: "One day, while Hou Yi was in the mountains, Peng Meng broke into their home.", vi: "Một ngày nọ, khi Hậu Nghệ đang ở trên núi, Phùng Mông đột nhập vào nhà họ.", scene: "Đột nhập" },
+                    { en: "He pointed a sword at Chang'e and demanded the Elixir of Immortality.", vi: "Hắn chỉ kiếm vào Hằng Nga và đòi nộp thuốc trường sinh bất tử.", scene: "Đe dọa" },
+                    { en: "Chang'e knew she could not defeat the wicked man by force.", vi: "Hằng Nga biết mình không thể dùng sức lực để đánh bại kẻ độc ác.", scene: "Nguy cấp" },
+                    { en: "To prevent him from taking the elixir, she opened the bottle and drank it herself.", vi: "Để ngăn hắn lấy được thuốc, nàng đã mở lọ và tự mình uống hết.", scene: "Hy sinh" },
+                    { en: "Immediately, Chang'e felt her body becoming light and floating off the ground.", vi: "Ngay lập tức, Hằng Nga cảm thấy cơ thể mình trở nên nhẹ bẫng và bay khỏi mặt đất.", scene: "Hóa tiên" },
+                    { en: "She drifted out of the window and began to fly toward the starry sky.", vi: "Nàng trôi ra khỏi cửa sổ và bắt đầu bay về phía bầu trời đầy sao.", scene: "Bay lên" },
+                    { en: "Because she loved her husband so much, she chose to fly to the nearest celestial body.", vi: "Vì quá yêu chồng, nàng đã chọn bay đến thiên thể gần nhất.", scene: "Quyết định" },
+                    { en: "She landed on the Moon, where she became the Moon Goddess.", vi: "Nàng đáp xuống Mặt Trăng, nơi nàng trở thành Hằng Nga (Thần Mặt Trăng).", scene: "Cung trăng" },
+                    { en: "A loyal Jade Rabbit accompanied her to the Moon Palace to keep her company.", vi: "Một chú Thỏ Ngọc trung thành đã đi cùng nàng đến Cung Quảng Hàn để bầu bạn.", scene: "Thỏ Ngọc" },
+                    { en: "The Moon Palace was a cold and lonely place, but very beautiful.", vi: "Cung Quảng Hàn là một nơi lạnh lẽo và cô đơn, nhưng vô cùng xinh đẹp.", scene: "Cung Quảng Hàn" },
+
+                    // --- PHẦN 3: NỖI NHỚ VÀ SỰ TÍCH TRUNG THU ---
+                    { en: "When Hou Yi returned, he found the house empty and his wife gone.", vi: "Khi Hậu Nghệ trở về, chàng thấy ngôi nhà trống không và vợ mình đã biến mất.", scene: "Đau buồn" },
+                    { en: "He looked up at the night sky and cried out Chang'e's name in despair.", vi: "Chàng nhìn lên bầu trời đêm và gọi tên Hằng Nga trong tuyệt vọng.", scene: "Tuyệt vọng" },
+                    { en: "The moon that night was exceptionally round and bright.", vi: "Mặt trăng đêm đó tròn và sáng một cách lạ thường.", scene: "Trăng tròn" },
+                    { en: "He saw a moving figure on the moon that looked exactly like his wife.", vi: "Chàng thấy một bóng người đang cử động trên trăng trông giống hệt vợ mình.", scene: "Nhìn thấy" },
+                    { en: "Hou Yi set up an altar in the garden with Chang'e's favorite fruits and cakes.", vi: "Hậu Nghệ lập một bàn thờ trong vườn với những loại trái cây và bánh mà Hằng Nga thích.", scene: "Cúng trăng" },
+                    { en: "People heard the story and began to offer sacrifices to the Moon Goddess for good luck.", vi: "Mọi người nghe chuyện và bắt đầu làm lễ cúng thần Mặt Trăng để cầu may mắn.", scene: "Lan truyền" },
+                    { en: "This tradition became the Mid-Autumn Festival, celebrated every year.", vi: "Truyền thống này đã trở thành Tết Trung Thu, được tổ chức hàng năm.", scene: "Lễ hội" },
+                    { en: "Children believe they can still see the Jade Rabbit making medicine on the moon.", vi: "Trẻ em tin rằng chúng vẫn có thể thấy Thỏ Ngọc đang giã thuốc trên mặt trăng.", scene: "Truyền thuyết" },
+                    { en: "Chang'e remains a symbol of beauty, grace, and eternal longing.", vi: "Hằng Nga vẫn là biểu tượng của vẻ đẹp, sự duyên dáng và nỗi nhớ vĩnh cửu.", scene: "Biểu tượng" },
+                    { en: "Her story is told during every full moon to remind us of true love.", vi: "Câu chuyện của nàng được kể vào mỗi đêm trăng tròn để nhắc nhở chúng ta về tình yêu đích thực.", scene: "Kết thúc" }
+                ]
+            },
+            confuciusProphecy: {
+                titleEn: "Confucius and the Emperor's Doom",
+                titleVi: "Khổng Tử và Lời Tiên Tri",
+                data: [
+                    // --- PHẦN 1: SỰ RA ĐỜI CỦA VỊ THÁNH ---
+                    { en: "When Confucius was born, a strange beast called the Kilin appeared on earth.", vi: "Khi Khổng Tử ra đời, một con quái thú kỳ lạ tên là Kỳ Lân đã xuất hiện trên thế gian.", scene: "Giáng sinh" },
+                    { en: "The Kilin, prince of all animals, only appears when a great man is born.", vi: "Kỳ Lân, chúa tể của muôn thú, chỉ xuất hiện khi một vĩ nhân ra đời.", scene: "Điềm lành" },
+                    { en: "The beast spat out a piece of jade with a mysterious prophecy written on it.", vi: "Con thú nhả ra một viên ngọc bích có khắc một lời tiên tri huyền bí.", scene: "Ngọc bích" },
+                    { en: "It said that the child was destined to become an 'Uncrowned King'.", vi: "Nó nói rằng đứa trẻ định sẵn sẽ trở thành một 'Vị Vua Không Ngai'.", scene: "Lời tiên tri" },
+                    { en: "Confucius grew up studying diligently and became a saint of great wisdom.", vi: "Khổng Tử lớn lên học tập chăm chỉ và trở thành một vị thánh có trí tuệ cao siêu.", scene: "Trưởng thành" },
+                    { en: "He did much good on earth and was reverenced as the greatest of teachers.", vi: "Người đã làm nhiều việc thiện và được tôn vinh là bậc thầy vĩ đại nhất.", scene: "Vĩ nhân" },
+                    { en: "The Saint had the power of foreknowledge, knowing things before they happened.", vi: "Vị Thánh có khả năng tiên tri, biết trước mọi việc trước khi chúng xảy ra.", scene: "Tiên tri" },
+                    { en: "Even after his death, he left evidence of his mysterious powers.", vi: "Ngay cả sau khi qua đời, người vẫn để lại những minh chứng về quyền năng huyền bí của mình.", scene: "Bất tử" },
+
+                    // --- PHẦN 2: SỰ XÂM PHẠM CỦA VỊ VUA ĐỘC ÁC ---
+                    { en: "Centuries later, the wicked Emperor Tsin Schi Huang conquered all kingdoms.", vi: "Nhiều thế kỷ sau, vị vua độc ác Tần Thủy Hoàng đã chinh phục tất cả các vương quốc.", scene: "Chinh phạt" },
+                    { en: "While traveling through the empire, he reached the homeland of the Saint.", vi: "Khi đi tuần du khắp đế chế, hắn đã đến quê hương của Vị Thánh.", scene: "Tuần du" },
+                    { en: "The Emperor found the grave of Confucius and wished to open it.", vi: "Hoàng đế tìm thấy lăng mộ của Khổng Tử và muốn khai quật nó.", scene: "Ngông cuồng" },
+                    { en: "His officials advised him not to disturb the Saint, but he would not listen.", vi: "Các quan lại khuyên hắn đừng mạo phạm Vị Thánh, nhưng hắn không nghe theo.", scene: "Cảnh báo" },
+                    { en: "They dug a passage into the grave and found a fresh wooden coffin.", vi: "Họ đào một lối đi vào mộ và tìm thấy một chiếc quan tài gỗ còn rất mới.", scene: "Khai quật" },
+                    { en: "When struck, the wood sounded like metal, echoing through the chamber.", vi: "Khi gõ vào, tiếng gỗ vang lên như tiếng kim loại, vang vọng khắp căn phòng.", scene: "Kỳ bí" },
+                    { en: "Inside an inner chamber, they found a bed, books, and clothing.", vi: "Trong một căn phòng bên trong, họ tìm thấy một chiếc giường, sách và quần áo.", scene: "Mộ thất" },
+                    { en: "Everything looked as though it was meant for a living person.", vi: "Mọi thứ trông như thể được chuẩn bị cho một người còn đang sống.", scene: "Sống động" },
+
+                    // --- PHẦN 3: LỜI CẢNH BÁO CUỐI CÙNG ---
+                    { en: "The Emperor sat on the bed and saw two shoes made of red silk.", vi: "Hoàng đế ngồi trên giường và thấy hai chiếc giày làm bằng lụa đỏ.", scene: "Tham lam" },
+                    { en: "The shoes were adorned with beautiful woven patterns of clouds.", vi: "Đôi giày được trang trí bằng những hoa văn mây dệt tuyệt đẹp.", scene: "Giày đỏ" },
+                    { en: "In jest, the Emperor put on the shoes and took a bamboo staff.", vi: "Để giễu cợt, Hoàng đế đã xỏ đôi giày vào và cầm lấy một cây gậy trúc.", scene: "Mạo phạm" },
+                    { en: "As he left the grave, a mysterious tablet suddenly appeared before him.", vi: "Khi hắn rời khỏi mộ, một tấm bia huyền bí đột nhiên xuất hiện trước mặt.", scene: "Hiện hình" },
+                    { en: "On the tablet was a poem predicting the Emperor's own death.", vi: "Trên tấm bia là một bài thơ tiên đoán về cái chết của chính vị Hoàng đế.", scene: "Bài thơ" },
+                    { en: "'You steal my shoes to reach your last earthly day,' the poem warned.", vi: "'Ngươi trộm giày của ta để đi đến ngày cuối cùng trên trần thế,' bài thơ cảnh báo.", scene: "Lời nguyền" },
+                    { en: "The poem even named the exact city where the Emperor would die.", vi: "Bài thơ thậm chí còn nêu đích danh thành phố nơi Hoàng đế sẽ băng hà.", scene: "Chính xác" },
+                    { en: "Tsin Schi Huang was alarmed and ordered the grave to be closed.", vi: "Tần Thủy Hoàng hoảng sợ và ra lệnh đóng cửa lăng mộ lại.", scene: "Hoảng sợ" },
+                    { en: "However, the Saint's prophecy could not be escaped.", vi: "Tuy nhiên, lời tiên tri của Vị Thánh là không thể tránh khỏi.", scene: "Định mệnh" },
+                    { en: "When he reached the city of Schakiu, the Emperor fell ill with a fever.", vi: "Khi đến thành phố Sa Khâu, Hoàng đế đã mắc một trận sốt cấp tính.", scene: "Đổ bệnh" },
+                    { en: "He died exactly as the poem in the grave had predicted.", vi: "Hắn qua đời đúng như những gì bài thơ trong mộ đã tiên đoán.", scene: "Ứng nghiệm" },
+                    { en: "The world remembered the Saint's wisdom and his silent power.", vi: "Thế giới ghi nhớ trí tuệ và quyền năng lặng lẽ của Vị Thánh.", scene: "Ghi nhớ" },
+                    { en: "Confucius remains the greatest teacher, an uncrowned king forever.", vi: "Khổng Tử mãi là bậc thầy vĩ đại nhất, một vị vua không ngai vĩnh cửu.", scene: "Tôn vinh" },
+                    { en: "Even kings must bow before the truth and wisdom of the saints.", vi: "Ngay cả những vị vua cũng phải cúi đầu trước sự thật và trí tuệ của các bậc thánh nhân.", scene: "Kết thúc" }
+                ]
+            },
+            theMiserKing: {
+                titleEn: "The Miser King and the Duck Feathers",
+                titleVi: "Vua Bủn Xỉn và Bộ Lông Vịt",
+                data: [
+                    // --- PHẦN 1: KẺ HÀ TIỆN TÊN VƯƠNG ---
+                    { en: "In a village near Nanking, there lived a man named Wang.", vi: "Tại một ngôi làng gần Nam Kinh, có một người đàn ông tên là Vương.", scene: "Giới thiệu" },
+                    { en: "He cared for nothing in the world but to eat good food and plenty of it.", vi: "Lão chẳng quan tâm đến điều gì trên đời ngoài việc được ăn ngon và ăn thật nhiều.", scene: "Tham ăn" },
+                    { en: "Although he was not poor, he hated spending his own money.", vi: "Mặc dù không hề nghèo, lão lại cực kỳ ghét việc phải tiêu tiền của chính mình.", scene: "Hà tiện" },
+                    { en: "People called him 'The Miser King' because of his stingy habits.", vi: "Mọi người gọi lão là 'Vua Bủn Xỉn' vì thói quen keo kiệt của lão.", scene: "Biệt danh" },
+                    { en: "He loved eating at other people's tables where the food cost him nothing.", vi: "Lão thích ăn chực ở bàn ăn của người khác, nơi lão không tốn một xu nào.", scene: "Ăn chực" },
+                    { en: "But when spending his own money, he only ate scraps and drank water.", vi: "Nhưng khi phải tiêu tiền mình, lão chỉ ăn đồ thừa và uống thật nhiều nước.", scene: "Khổ hạnh" },
+                    { en: "One day, while lying by a stream, the Miser King began to feel very hungry.", vi: "Một ngày nọ, khi đang nằm bên bờ suối, Vua Bủn Xỉn bắt đầu cảm thấy rất đói.", scene: "Cơn đói" },
+                    { en: "He saw a flock of fat ducks swimming in the river nearby.", vi: "Lão thấy một đàn vịt béo mập đang bơi lội dưới dòng sông gần đó.", scene: "Đàn vịt" },
+                    { en: "The ducks belonged to a rich and honest neighbor named Mr. Lin.", vi: "Đàn vịt đó thuộc về một người hàng xóm giàu có và trung thực tên là Lâm.", scene: "Chủ nhân" },
+                    { en: "'Oh, for a boiled duck!' the Miser King sighed to himself.", vi: "'Ôi, ước gì có một con vịt luộc!' Vua Bủn Xỉn thở dài tự nhủ.", scene: "Thèm thuồng" },
+
+                    // --- PHẦN 2: VỤ TRỘM VÀ BỮA ĂN TỘI LỖI ---
+                    { en: "He convinced himself that the gods had sent the ducks just for him.", vi: "Lão tự thuyết phục mình rằng các vị thần đã gửi đàn vịt này đến cho lão.", scene: "Tự huyễn" },
+                    { en: "The Miser King caught one of the plump ducks and hid it under his garment.", vi: "Vua Bủn Xỉn bắt lấy một con vịt béo nhất và giấu nó dưới lớp áo rách.", scene: "Trộm vịt" },
+                    { en: "He took it home joyfully and prepared it for a secret dinner.", vi: "Lão hân hoan mang nó về nhà và chuẩn bị cho một bữa tối bí mật.", scene: "Về nhà" },
+                    { en: "He ate the whole duck, laughing at his own slyness and trickery.", vi: "Lão ăn sạch con vịt, cười đắc ý trước sự ranh mãnh và thủ đoạn của mình.", scene: "Chén sạch" },
+                    { en: "'Mr. Lin will think a hawk carried it away,' he chuckled.", vi: "'Lâm sẽ nghĩ là diều hâu đã tha nó đi thôi,' lão cười khoái chí.", scene: "Đắc ý" },
+                    { en: "He planned to steal all the other ducks in the coming weeks.", vi: "Lão còn định bụng sẽ trộm sạch những con vịt còn lại trong vài tuần tới.", scene: "Tham lam" },
+                    { en: "That night, the Miser King went to bed feeling very happy and full.", vi: "Đêm đó, Vua Bủn Xỉn đi ngủ trong trạng thái vô cùng hạnh phúc và no nê.", scene: "Đi ngủ" },
+                    { en: "However, at midnight, he was awakened by a strange and painful itching.", vi: "Tuy nhiên, vào nửa đêm, lão bị đánh thức bởi một cơn ngứa ngáy lạ lùng và đau đớn.", scene: "Thức giấc" },
+                    { en: "His whole body felt like it was on fire, but he had no oil for his lamp.", vi: "Toàn thân lão cảm thấy như đang bốc cháy, nhưng lão lại không có dầu thắp đèn.", scene: "Cơn đau" },
+                    { en: "He had to wait until dawn to see what was happening to his skin.", vi: "Lão phải đợi đến lúc bình minh để xem điều gì đang xảy ra với làn da của mình.", scene: "Chờ đợi" },
+
+                    // --- PHẦN 3: LỜI NGUYỀN LÔNG VỊT ---
+                    { en: "At early dawn, he stepped outside and saw red spots all over his body.", vi: "Lúc tảng sáng, lão bước ra ngoài và thấy những đốm đỏ khắp cơ thể.", scene: "Kinh hãi" },
+                    { en: "Tiny duck feathers were sprouting from every single red spot.", vi: "Những chiếc lông vịt tí hon đang mọc ra từ mỗi đốm đỏ đó.", scene: "Mọc lông" },
+                    { en: "The feathers grew larger and larger until they covered him from head to foot.", vi: "Lông mọc ngày càng dài cho đến khi phủ kín lão từ đầu đến chân.", scene: "Biến dạng" },
+                    { en: "With a cry of horror, he tried to pull the feathers out by handfuls.", vi: "Trong tiếng hét kinh hoàng, lão cố dùng tay nhổ từng nắm lông ra.", scene: "Nhổ lông" },
+                    { en: "But the faster he pulled them, the faster they grew back, longer and glossier.", vi: "Nhưng lão nhổ càng nhanh, chúng mọc lại càng lẹ, dài hơn và bóng mượt hơn.", scene: "Vô vọng" },
+                    { en: "The pain was so great that he began to roll on the ground in despair.", vi: "Cơn đau lớn đến mức lão bắt đầu lăn lộn trên đất trong sự tuyệt vọng.", scene: "Quằn quại" },
+                    { en: "'Am I to be changed into a bird?' he groaned in misery.", vi: "'Chẳng lẽ mình sắp biến thành một con chim sao?' lão rên rỉ khổ sở.", scene: "Than vãn" },
+                    { en: "Finally, he fell into a troubled sleep and saw a Fairy in his dream.", vi: "Cuối cùng, lão chìm vào giấc ngủ chập chờn và thấy một vị Tiên trong mơ.", scene: "Gặp Tiên" },
+                    { en: "The Fairy told him that his laziness and theft had brought this trouble.", vi: "Vị Tiên nói rằng thói lười biếng và trộm cắp đã mang lại rắc rối này cho lão.", scene: "Quở trách" },
+                    { en: "He reminded Wang that his parents had died because he refused to work.", vi: "Tiên ông nhắc Vương rằng cha mẹ lão đã mất vì lão từ chối làm việc giúp họ.", scene: "Sự thật" },
+
+                    // --- PHẦN 4: LIỀU THUỐC CỦA TIÊN ÔNG ---
+                    { en: "The Miser King begged the Fairy to free him from the feathers.", vi: "Vua Bủn Xỉn cầu xin Tiên ông giải thoát lão khỏi bộ lông vịt.", scene: "Cầu xin" },
+                    { en: "'I cannot free you,' said the Fairy, 'you must do it yourself.'", vi: "'Ta không thể giải thoát cho con,' Tiên ông nói, 'con phải tự mình làm điều đó.'", scene: "Chỉ dẫn" },
+                    { en: "The Fairy said he must get Mr. Lin, the owner of the duck, to scold him.", vi: "Tiên ông bảo lão phải làm sao để ông Lâm, chủ con vịt, mắng lão một trận.", scene: "Liều thuốc" },
+                    { en: "'The harder he scolds you, the sooner the feathers will fall out.'", vi: "'Ông ấy mắng con càng nặng, lông vịt sẽ càng nhanh rụng hết.'", scene: "Bí mật" },
+                    { en: "The Miser King woke up and decided to go to Mr. Lin's house immediately.", vi: "Vua Bủn Xỉn thức dậy và quyết định đến nhà ông Lâm ngay lập tức.", scene: "Lên đường" },
+                    { en: "He even took some money to pay for the stolen duck.", vi: "Lão còn mang theo một ít tiền để trả cho con vịt đã trộm.", scene: "Hối lỗi?" },
+                    { en: "But on the way, his stingy nature began to take over again.", vi: "Nhưng trên đường đi, bản tính keo kiệt của lão lại bắt đầu trỗi dậy.", scene: "Do dự" },
+                    { en: "He hated to part with his copper coins and didn't want to admit he was a thief.", vi: "Lão ghét việc phải rời xa những đồng xu của mình và không muốn thừa nhận mình là kẻ trộm.", scene: "Tiếc của" },
+                    { en: "He thought of a trick to make Mr. Lin scold someone else instead.", vi: "Lão nghĩ ra một mưu mẹo để khiến ông Lâm mắng một người khác thay thế.", scene: "Mưu hèn" },
+                    { en: "'I will tell him that old Sen stole the duck!' the Miser King thought.", vi: "'Mình sẽ bảo ông ấy rằng lão Sen đã trộm con vịt!' Vua Bủn Xỉn nghĩ thầm.", scene: "Vu khống" },
+
+                    // --- PHẦN 5: SỰ TỬ TẾ CỦA NGƯỜI HÀNG XÓM ---
+                    { en: "He reached Mr. Lin's house and began his sly conversation.", vi: "Lão đến nhà ông Lâm và bắt đầu cuộc trò chuyện ranh mãnh của mình.", scene: "Gặp gỡ" },
+                    { en: "Mr. Lin was an honest man who never spoke ill of his neighbors.", vi: "Ông Lâm là một người trung thực, chẳng bao giờ nói xấu hàng xóm láng giềng.", scene: "Nhân hậu" },
+                    { en: "Wang told Lin that a duck was missing and suggested that old Sen took it.", vi: "Vương bảo Lâm rằng một con vịt đã mất và gợi ý rằng lão Sen đã lấy nó.", scene: "Đâm thọc" },
+                    { en: "To Wang's surprise, Mr. Lin was not angry at all.", vi: "Trước sự ngạc nhiên của Vương, ông Lâm chẳng hề tức giận chút nào.", scene: "Bất ngờ" },
+                    { en: "Instead, Mr. Lin felt sorry for Sen and offered to help him.", vi: "Thay vào đó, ông Lâm cảm thấy thương cho Sen và muốn giúp đỡ ông ấy.", scene: "Tử tế" },
+                    { en: "'I would have given him the duck if he had only asked,' said Lin.", vi: "'Tôi đã sẵn lòng tặng ông ấy con vịt nếu ông ấy hỏi mượn,' Lâm nói.", scene: "Khoan dung" },
+                    { en: "The Miser King was frustrated because Mr. Lin refused to scold anyone.", vi: "Vua Bủn Xỉn nản lòng vì ông Lâm từ chối mắng nhiếc bất cứ ai.", scene: "Thất vọng" },
+                    { en: "Suddenly, the itching became so unbearable that Wang fell to the floor.", vi: "Đột nhiên, cơn ngứa trở nên không thể chịu nổi khiến Vương ngã gục xuống sàn.", scene: "Ngứa ngáy" },
+                    { en: "He realized that he could not hide the truth any longer.", vi: "Lão nhận ra rằng mình không thể che giấu sự thật thêm được nữa.", scene: "Thú nhận" },
+                    { en: "'I stole your duck!' he cried out, bowing in the dirt.", vi: "'Tôi đã trộm vịt của ông!' lão gào lên, cúi lạy dưới nền đất.", scene: "Tự thú" },
+
+                    // --- PHẦN 6: TRẬN MẮNG GIẢI NGÔN ---
+                    { en: "Wang showed Mr. Lin the thick growth of feathers covering his body.", vi: "Vương cho ông Lâm xem lớp lông vịt dày đặc đang phủ kín cơ thể lão.", scene: "Bằng chứng" },
+                    { en: "Mr. Lin burst into a roar of laughter, thinking it was a funny story.", vi: "Ông Lâm phá lên cười sảng khoái, nghĩ rằng đó là một câu chuyện hài hước.", scene: "Tiếng cười" },
+                    { en: "The Miser King begged and kowtowed, asking Lin to scold him hard.", vi: "Vua Bủn Xỉn van xin và dập đầu, yêu cầu Lâm hãy mắng lão thật nặng lời.", scene: "Van nài" },
+                    { en: "Lin was a kind man and found it very difficult to use strong language.", vi: "Lâm là một người tốt và thấy rất khó khăn khi phải dùng lời lẽ nặng nề.", scene: "Ngần ngại" },
+                    { en: "But Wang kept grabbing Lin's legs, screaming for a scolding.", vi: "Nhưng Vương cứ ôm chặt lấy chân Lâm, gào thét đòi được mắng.", scene: "Ép buộc" },
+                    { en: "Finally, Mr. Lin lost his patience and began to shout at the miser.", vi: "Cuối cùng, ông Lâm mất kiên nhẫn và bắt đầu quát mắng kẻ hà tiện.", scene: "Nổi giận" },
+                    { en: "'You lazy hound! You good-for-nothing creature!' Lin yelled.", vi: "'Đồ chó lười! Đồ sinh vật vô dụng!' Lâm hét lên.", scene: "Mắng nhiếc" },
+                    { en: "As soon as the harsh words were spoken, the feathers began to fall off.", vi: "Ngay khi những lời nặng nề được thốt ra, lông vịt bắt đầu rụng xuống.", scene: "Phép màu" },
+                    { en: "A great pile of feathers accumulated on the floor around them.", vi: "Một đống lông lớn tích tụ trên sàn nhà xung quanh họ.", scene: "Rụng lông" },
+                    { en: "The dreadful itching stopped, and Wang felt light and free again.", vi: "Cơn ngứa khủng khiếp dừng lại, và Vương cảm thấy nhẹ nhõm, tự do trở lại.", scene: "Giải thoát" },
+
+                    // --- PHẦN 7: SỰ THAY ĐỔI CỦA VUA BỦN XỈN ---
+                    { en: "The Miser King thanked Mr. Lin for the 'splendid set of scold-words'.", vi: "Vua Bủn Xỉn cảm ơn ông Lâm vì 'loạt lời mắng nhiếc tuyệt vời'.", scene: "Biết ơn" },
+                    { en: "He paid for the duck and left the feathers as a gift for Lin.", vi: "Lão trả tiền con vịt và để lại đống lông như một món quà cho Lâm.", scene: "Sửa đổi" },
+                    { en: "Wang realized that his lazy and stingy life had been a mistake.", vi: "Vương nhận ra rằng cuộc đời lười biếng và keo kiệt của lão là một sai lầm.", scene: "Tỉnh ngộ" },
+                    { en: "He promised to work hard and become a better man from that day on.", vi: "Lão hứa sẽ làm việc chăm chỉ và trở thành một người tốt hơn kể từ ngày đó.", scene: "Quyết tâm" },
+                    { en: "He stopped being a miser and started helping others in the village.", vi: "Lão không còn bủn xỉn nữa và bắt đầu giúp đỡ những người khác trong làng.", scene: "Thay đổi" },
+                    { en: "The villagers no longer laughed at him, but respected his hard work.", vi: "Dân làng không còn cười nhạo lão, mà tôn trọng sự chăm chỉ của lão.", scene: "Tôn trọng" },
+                    { en: "The 'Miser King' had finally learned the value of honesty.", vi: "'Vua Bủn Xỉn' cuối cùng đã học được giá trị của lòng trung thực.", scene: "Giá trị" },
+                    { en: "He married and lived a happy, productive life with his family.", vi: "Lão kết hôn và sống một cuộc đời hạnh phúc, hữu ích bên gia đình.", scene: "Hạnh phúc" },
+                    { en: "The memory of the duck feathers kept him from ever being lazy again.", vi: "Ký ức về những chiếc lông vịt đã giúp lão không bao giờ lười biếng nữa.", scene: "Nhắc nhở" },
+                    { en: "True wealth is not in gold, but in a clean heart and a busy hand.", vi: "Giàu sang thực sự không nằm ở vàng bạc, mà ở một trái tim trong sạch và đôi tay siêng năng.", scene: "Bài học" },
+
+                    // --- PHẦN 8: TỔNG KẾT VÀ SUY NGẪM ---
+                    { en: "Honesty is the best medicine for a sick soul.", vi: "Trung thực là liều thuốc tốt nhất cho một tâm hồn bệnh tật.", scene: "Suy ngẫm 1" },
+                    { en: "Hard work brings more joy than stolen food ever could.", vi: "Lao động chăm chỉ mang lại nhiều niềm vui hơn bất kỳ món ăn trộm cắp nào.", scene: "Suy ngẫm 2" },
+                    { en: "A kind neighbor is worth more than a hoard of hidden copper.", vi: "Một người hàng xóm tốt bụng đáng giá hơn cả một kho tiền đồng giấu kín.", scene: "Suy ngẫm 3" },
+                    { en: "Conscience is a mirror that shows us our true feathers.", vi: "Lương tâm là tấm gương soi cho chúng ta thấy những 'chiếc lông' thực sự của mình.", scene: "Suy ngẫm 4" },
+                    { en: "Do not wait for a curse to start living a virtuous life.", vi: "Đừng đợi đến khi bị nguyền rủa mới bắt đầu sống một cuộc đời đức hạnh.", scene: "Lời khuyên 1" },
+                    { en: "Greed only leads to a heavy heart and a painful skin.", vi: "Tham lam chỉ dẫn đến một trái tim nặng nề và một làn da đau đớn.", scene: "Lời khuyên 2" },
+                    { en: "The Fairy Old Boy watches over those who are willing to change.", vi: "Tiên ông luôn dõi theo những ai sẵn lòng thay đổi bản thân.", scene: "Thần tiên" },
+                    { en: "Every mistake is a chance to grow wiser and stronger.", vi: "Mỗi sai lầm là một cơ hội để trở nên khôn ngoan và mạnh mẽ hơn.", scene: "Trưởng thành" },
+                    { en: "The stars shine on those who work with a smile.", vi: "Những vì sao luôn tỏa sáng cho những ai lao động với nụ cười trên môi.", scene: "Ánh sáng" },
+                    { en: "And so, the story of the Duck Feathers is told to this day.", vi: "Và cứ thế, câu chuyện về Bộ Lông Vịt vẫn được kể lại cho đến ngày nay.", scene: "Kết thúc" }
+                ]
+            },
+            lusanHeaven: {
+                titleEn: "Lu-san, Daughter of Heaven",
+                titleVi: "Lục San, Con Gái Của Trời",
+                data: [
+                    // --- PHẦN 1: CUỘC SỐNG KHỔ CỰC TRÊN THUYỀN ---
+                    { en: "Lu-san was a little girl who lived on a small houseboat with her family.", vi: "Lục San là một cô bé sống trên một chiếc thuyền chài nhỏ cùng gia đình.", scene: "Giới thiệu" },
+                    { en: "Her father was a poor fisherman, but he was also ignorant and cruel.", vi: "Cha cô là một ngư dân nghèo, nhưng ông ta cũng là kẻ ngu muội và độc ác.", scene: "Người cha" },
+                    { en: "He had no love for his children and often threatened to drown them all.", vi: "Ông ta không có tình thương với con cái và thường xuyên đe dọa sẽ dìm chết tất cả.", scene: "Đe dọa" },
+                    { en: "Even her mother was unkind, often beating Lu-san without mercy.", vi: "Ngay cả mẹ cô cũng chẳng tử tế gì, bà thường xuyên đánh đập Lục San không thương tiếc.", scene: "Người mẹ" },
+                    { en: "Lu-san's only treasure was a tiny soapstone image of the goddess Kwan-yin.", vi: "Báu vật duy nhất của Lục San là một bức tượng nhỏ bằng đá xà phòng hình Quan Âm Bồ Tát.", scene: "Báu vật" },
+                    { en: "One night, Lu-san overheard her parents planning to get rid of her.", vi: "Một đêm nọ, Lục San tình cờ nghe thấy cha mẹ đang bàn kế hoạch tống khứ cô đi.", scene: "Âm mưu" },
+                    { en: "'We will wait until the moon has set, then the girl goes down,' her father said.", vi: "'Chúng ta sẽ đợi trăng lặn, rồi con bé sẽ phải xuống nước,' người cha nói.", scene: "Nguy hiểm" },
+                    { en: "Terrified, Lu-san decided to flee from the boat to save her life.", vi: "Quá kinh hãi, Lục San quyết định bỏ trốn khỏi con thuyền để cứu mạng mình.", scene: "Chạy trốn" },
+                    { en: "She climbed the ladder silently, carrying only her precious stone image.", vi: "Cô lặng lẽ leo lên thang, chỉ mang theo bức tượng đá quý giá của mình.", scene: "Lặng lẽ" },
+                    { en: "She stepped onto the dark shore, ready to go out into the big world alone.", vi: "Cô bước lên bờ sông tối tăm, sẵn sàng một mình dấn thân vào thế giới rộng lớn.", scene: "Lên bờ" },
+
+                    // --- PHẦN 2: CUỘC GẶP GỠ TRÊN BỜ SÔNG ---
+                    { en: "Lu-san ran as fast as her little legs could carry her away from the water.", vi: "Lục San chạy nhanh hết mức có thể để rời xa dòng nước.", scene: "Chạy đi" },
+                    { en: "She reached the open fields and fell in a heap on the sand, exhausted.", vi: "Cô chạy đến những cánh đồng trống và ngã gục trên cát vì kiệt sức.", scene: "Kiệt sức" },
+                    { en: "She whispered a prayer to Kwan-yin and fell into a deep sleep.", vi: "Cô thì thầm một lời cầu nguyện tới Quan Âm và chìm vào giấc ngủ sâu.", scene: "Cầu nguyện" },
+                    { en: "When she awoke, a beautiful lady dressed like a princess was bending over her.", vi: "Khi thức dậy, một quý bà xinh đẹp mặc đồ như công chúa đang cúi xuống nhìn cô.", scene: "Tiên nữ" },
+                    { en: "The lady had the fairest face and most perfect features Lu-san had ever seen.", vi: "Quý bà có gương mặt thanh tú và những đường nét hoàn hảo nhất mà Lục San từng thấy.", scene: "Vẻ đẹp" },
+                    { en: "Lu-san offered her soapstone image, thinking the lady must have lost it.", vi: "Lục San dâng bức tượng đá của mình, nghĩ rằng quý bà hẳn đã làm rơi nó.", scene: "Sự thật thà" },
+                    { en: "'It is the goddess Kwan-yin,' the child said, 'she who makes children happy.'", vi: "'Đây là Quan Âm Bồ Tát,' đứa trẻ nói, 'Người mang lại hạnh phúc cho trẻ nhỏ.'", scene: "Trao tặng" },
+                    { en: "The beautiful lady embraced Lu-san tightly, and a tear fell from her eye.", vi: "Quý bà xinh đẹp ôm chặt Lục San, và một giọt nước mắt rơi từ mắt bà.", scene: "Cảm động" },
+                    { en: "The tear touched Lu-san's head as she fell asleep in the lady's arms.", vi: "Giọt nước mắt chạm vào đầu Lục San khi cô ngủ thiếp đi trong vòng tay bà.", scene: "Phép màu" },
+                    { en: "Lu-san felt a warmth and love she had never known in her entire life.", vi: "Lục San cảm thấy một sự ấm áp và tình yêu mà cô chưa từng biết trong đời.", scene: "Tình thương" },
+
+                    // --- PHẦN 3: SỰ THAY ĐỔI KỲ DIỆU ---
+                    { en: "When Lu-san awoke, she was back on the houseboat, but everything felt different.", vi: "Khi Lục San tỉnh dậy, cô đã ở lại trên thuyền, nhưng mọi thứ cảm thấy thật khác lạ.", scene: "Tỉnh giấc" },
+                    { en: "Her parents were speaking in low, gentle voices instead of their usual shouts.", vi: "Cha mẹ cô đang nói chuyện bằng giọng thấp, nhẹ nhàng thay vì những tiếng quát tháo thường ngày.", scene: "Thay đổi" },
+                    { en: "Her father told her mother about a strange light he saw around Lu-san's face.", vi: "Người cha kể với người mẹ về một luồng sáng lạ ông thấy quanh mặt Lục San.", scene: "Kể chuyện" },
+                    { en: "A voice had whispered to him, 'Would you hurt a daughter of the gods?'", vi: "Một giọng nói đã thì thầm với ông: 'Ngươi định làm hại một người con của thần sao?'", scene: "Cảnh báo" },
+                    { en: "The parents were struck with fear and realized how wicked they had been.", vi: "Cha mẹ cô run rẩy sợ hãi và nhận ra họ đã từng độc ác đến mức nào.", scene: "Hối hận" },
+                    { en: "Lu-san found beautiful silk garments and satin slippers waiting for her.", vi: "Lục San tìm thấy những bộ đồ lụa tuyệt đẹp và đôi hài gấm đang đợi mình.", scene: "Quà tặng" },
+                    { en: "Her rough, work-worn hands had become soft, smooth, and shapely.", vi: "Đôi bàn tay thô ráp vì làm việc nặng của cô nay trở nên mềm mại và thanh tú.", scene: "Biến đổi" },
+                    { en: "The old, dirty houseboat had transformed into a magnificent, stately ship.", vi: "Chiếc thuyền chài cũ bẩn đã biến thành một con tàu lộng lẫy và uy nghi.", scene: "Con tàu thần" },
+                    { en: "The ragged sail was now a beautiful sheet of canvas floating in the breeze.", vi: "Cánh buồm rách nát nay là một dải vải bạt tuyệt đẹp bay trong gió.", scene: "Cánh buồm" },
+                    { en: "Everything Lu-san touched seemed to change as if by magic.", vi: "Mọi thứ Lục San chạm vào dường như đều thay đổi như có phép màu.", scene: "Phép thuật" },
+
+                    // --- PHẦN 4: LÒNG VỊ THA CỦA LỤC SAN ---
+                    { en: "Lu-san found her parents trembling in a corner, wearing their usual rags.", vi: "Lục San thấy cha mẹ đang run rẩy trong góc, vẫn mặc những bộ đồ rách rưới cũ.", scene: "Gặp lại" },
+                    { en: "They bowed before her, thinking she was a goddess from another world.", vi: "Họ cúi lạy trước cô, nghĩ rằng cô là một vị nữ thần từ thế giới khác.", scene: "Kính sợ" },
+                    { en: "Lu-san touched her father's shoulder and told him not to be afraid.", vi: "Lục San chạm vào vai cha và bảo ông đừng sợ hãi.", scene: "Vỗ về" },
+                    { en: "She forgave them for all the pain they had caused her in the past.", vi: "Cô tha thứ cho họ vì tất cả những nỗi đau mà họ đã gây ra cho cô trước đây.", scene: "Vị tha" },
+                    { en: "'As the Goddess of Mercy has favored me, I bestow her love on you,' she said.", vi: "'Vì Quan Âm Bồ Tát đã ban phước cho con, con xin trao tình thương của Người cho cha mẹ,' cô nói.", scene: "Ban phước" },
+                    { en: "She told her brothers to speak no more angry words to one another.", vi: "Cô bảo các anh trai mình đừng bao giờ nói lời giận dữ với nhau nữa.", scene: "Dạy bảo" },
+                    { en: "The family began to live in peace and happiness on the magic ship.", vi: "Gia đình bắt đầu sống trong hòa bình và hạnh phúc trên con tàu thần kỳ.", scene: "Hạnh phúc" },
+                    { en: "Whenever they cast their nets, they drew back the choicest fish.", vi: "Mỗi khi họ quăng lưới, họ đều kéo lên được những con cá ngon nhất.", scene: "Thu hoạch" },
+                    { en: "Lu-san became known as the richest and kindest person in the country.", vi: "Lục San trở nên nổi tiếng là người giàu có và nhân hậu nhất vùng.", scene: "Danh tiếng" },
+                    { en: "The family learned that only love and kindness must rule their lives.", vi: "Cả gia đình học được rằng chỉ có tình yêu và sự tử tế mới nên làm chủ cuộc sống của họ.", scene: "Bài học" },
+
+                    // --- PHẦN 5: NGÀY HÓA TIÊN ---
+                    { en: "One day, during the Second Moon, it was the birthday of Kwan-yin.", vi: "Một ngày nọ, vào tháng Hai âm lịch, đó là ngày sinh nhật của Quan Âm.", scene: "Lễ hội" },
+                    { en: "The family went to the temple to give the goddess honor.", vi: "Cả gia đình đến đền thờ để tôn vinh vị nữ thần.", scene: "Đi lễ" },
+                    { en: "Suddenly, a strange object appeared in the distant western sky.", vi: "Đột nhiên, một vật thể lạ xuất hiện trên bầu trời phía tây xa xăm.", scene: "Điềm lạ" },
+                    { en: "A flight of white doves was drawing a wonderful chair through the air.", vi: "Một đàn bồ câu trắng đang kéo một chiếc ghế tuyệt đẹp bay qua không trung.", scene: "Xe kéo chim" },
+                    { en: "The chair was made of white and gold, more dazzling than a throne.", vi: "Chiếc ghế được làm từ vàng và trắng, rực rỡ hơn cả một ngai vàng.", scene: "Kiệu thần" },
+                    { en: "The doves lowered the magic chair until it was right in front of Lu-san.", vi: "Đàn bồ câu hạ chiếc ghế thần xuống cho đến khi nó dừng ngay trước mặt Lục San.", scene: "Đón rước" },
+                    { en: "A shower of pure white lilies fell about her feet from the sky.", vi: "Một cơn mưa hoa huệ trắng tinh khôi rơi xuống chân cô từ bầu trời.", scene: "Mưa hoa" },
+                    { en: "Lu-san stepped into the fairy car and waved farewell to her family.", vi: "Lục San bước vào cỗ xe tiên và vẫy tay chào tạm biệt gia đình mình.", scene: "Tạm biệt" },
+                    { en: "A voice from the clouds spoke in music: 'Kwan-yin rewards Lu-san.'", vi: "Một giọng nói từ những đám mây vang lên như âm nhạc: 'Quan Âm ban thưởng cho Lục San.'", scene: "Tiếng trời" },
+                    { en: "'The tear from Kwan-yin's eye touched the hearts of those who loved you not.'", vi: "'Giọt nước mắt từ mắt Quan Âm đã chạm đến trái tim của những kẻ từng không yêu thương con.'", scene: "Giải thích" },
+
+                    // --- PHẦN 6: BIẾN THÀNH NGÔI SAO ---
+                    { en: "Lu-san began to rise into the Western Heaven among the fairies.", vi: "Lục San bắt đầu bay lên Tây Phương Cực Lạc giữa những nàng tiên.", scene: "Thăng thiên" },
+                    { en: "A rosy light surrounded her flying car as she disappeared into the sky.", vi: "Một luồng sáng hồng bao quanh cỗ xe khi cô biến mất vào bầu trời.", scene: "Ánh hồng" },
+                    { en: "It seemed as if heaven's gates were opening to receive her.", vi: "Dường như cổng trời đang mở ra để đón nhận cô.", scene: "Cổng trời" },
+                    { en: "The people on earth watched in wonder, their eyes wet with tears.", vi: "Người dân dưới mặt đất dõi theo trong sự kinh ngạc, mắt họ đẫm lệ.", scene: "Kinh ngạc" },
+                    { en: "Lu-san became a bright star within the azure realms above.", vi: "Lục San đã trở thành một ngôi sao sáng trong cõi xanh thẳm phía trên.", scene: "Ngôi sao" },
+                    { en: "Her story reminds us that goodness can spring even from the dust.", vi: "Câu chuyện của cô nhắc nhở chúng ta rằng lòng tốt có thể nảy nở ngay cả từ bụi cát.", scene: "Ý nghĩa" },
+                    { en: "Love has the power to soften the hardest and most cruel hearts.", vi: "Tình yêu có sức mạnh làm mềm lòng cả những trái tim cứng rắn và độc ác nhất.", scene: "Sức mạnh tình yêu" },
+                    { en: "Lu-san, the Daughter of Heaven, is never forgotten.", vi: "Lục San, người con gái của Trời, sẽ không bao giờ bị lãng quên.", scene: "Vĩnh cửu" },
+                    { en: "The Goddess of Mercy always listens to the prayers of the suffering.", vi: "Quan Âm Bồ Tát luôn lắng nghe lời cầu nguyện của những người đau khổ.", scene: "Niềm tin" },
+                    { en: "May every heart find the peace that Lu-san brought to her world.", vi: "Cầu mong mọi trái tim đều tìm thấy sự bình an mà Lục San đã mang đến cho thế giới của cô.", scene: "Kết thúc" },
+
+                    // --- CÁC THẺ BỔ SUNG ĐỂ ĐỦ 80 THẺ (Gợi ý thêm từ nội dung) ---
+                    { en: "The soapstone image was the only plaything of her childhood.", vi: "Bức tượng đá xà phòng là đồ chơi duy nhất trong tuổi thơ của cô.", scene: "Kỷ niệm" },
+                    { en: "She found it one day while walking in the sand near the river.", vi: "Cô tìm thấy nó một ngày nọ khi đang đi dạo trên cát gần bờ sông.", scene: "Tìm thấy" },
+                    { en: "Lu-san had often listened to stories of Kwan-yin from an old priest.", vi: "Lục San thường nghe những câu chuyện về Quan Âm từ một vị sư già.", scene: "Học hỏi" },
+                    { en: "The Goddess of Mercy is known as the best friend of children.", vi: "Quan Âm Bồ Tát được biết đến là người bạn tốt nhất của trẻ nhỏ.", scene: "Quan Âm" },
+                    { en: "Dark memories filled Lu-san's mind as she fled past the houses.", vi: "Những ký ức đen tối lấp đầy tâm trí Lục San khi cô chạy qua những ngôi nhà.", scene: "Ký ức" },
+                    { en: "She feared the river dwellers who did many dreadful deeds.", vi: "Cô sợ những người sống trên sông, những kẻ đã làm nhiều việc khủng khiếp.", scene: "Nỗi sợ" },
+                    { en: "But the bright land and sunshine called to her heart.", vi: "Nhưng vùng đất tươi sáng và ánh nắng mặt trời đã vẫy gọi trái tim cô.", scene: "Hy vọng" },
+                    { en: "A huge boat dog barked at her, but she did not stop running.", vi: "Một con chó thuyền to lớn sủa vào cô, nhưng cô không ngừng chạy.", scene: "Thử thách" },
+                    { en: "She preferred the unknown world over the death her parents planned.", vi: "Cô thà chọn thế giới xa lạ còn hơn là cái chết mà cha mẹ đã định sẵn.", scene: "Lựa chọn" },
+                    { en: "The city was full of thousands of sleepers, but none were her friends.", vi: "Thành phố đầy rẫy hàng ngàn người đang ngủ, nhưng chẳng ai là bạn cô.", scene: "Cô đơn" },
+                    { en: "The mysterious princess in her dream was actually the goddess herself.", vi: "Quý bà huyền bí trong giấc mơ thực chất chính là vị nữ thần.", scene: "Tiết lộ" },
+                    { en: "The lily flowers symbolize the purity of Lu-san's soul.", vi: "Những bông hoa huệ tượng trưng cho sự thuần khiết trong tâm hồn Lục San.", scene: "Biểu tượng" },
+                    { en: "The father's hands hung limp when he tried to touch the girl.", vi: "Đôi tay người cha buông thõng khi ông cố chạm vào cô bé.", scene: "Trừng phạt" },
+                    { en: "Insulting a daughter of the gods brings a thousand blows from Yama.", vi: "Xúc phạm một người con của thần linh sẽ bị Diêm Vương trừng phạt nghìn lần.", scene: "Luật quả" },
+                    { en: "The magic ship moved up and down the river with invisible sailors.", vi: "Con tàu thần kỳ di chuyển ngược xuôi dòng sông với những thủy thủ vô hình.", scene: "Thủy thủ" },
+                    { en: "The Second Moon is a time of rebirth and celebration of the divine.", vi: "Tháng Hai là thời gian của sự tái sinh và tôn vinh thần linh.", scene: "Thời gian" },
+                    { en: "Doves with silken ribbons guided Lu-san toward her destiny.", vi: "Những con bồ câu với dải ruy băng lụa đã dẫn lối Lục San đến định mệnh.", scene: "Dẫn lối" },
+                    { en: "The Western Heaven is a realm of eternal light and joy.", vi: "Tây Phương Cực Lạc là cõi của ánh sáng và niềm vui vĩnh cửu.", scene: "Thiên đường" },
+                    { en: "Her parents' faces became softened as they grew in wisdom.", vi: "Khuôn mặt cha mẹ cô trở nên hiền hậu hơn khi họ dần trở nên khôn ngoan.", scene: "Tu tâm" },
+                    { en: "Goodness is a treasure that no one can ever take away.", vi: "Lòng tốt là một kho báu mà không ai có thể lấy đi được.", scene: "Chân lý" }
+                ]
+            }
+        };
+
+        const synth = window.speechSynthesis;
+        const voiceSelect = document.getElementById('voice-select');
+        let voices = [];
+        let currentStoryData = [];
+
+        function loadVoices() {
+            voices = synth.getVoices().filter(v => v.lang.includes('en'));
+            voiceSelect.innerHTML = voices.map((v, i) => `<option value="${i}">${v.name}</option>`).join('');
+        }
+        synth.onvoiceschanged = loadVoices;
+
+        function speak(text) {
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (voices[voiceSelect.value]) utterance.voice = voices[voiceSelect.value];
+            synth.speak(utterance);
+        }
+
+        // HÀM QUAN TRỌNG: LOAD TRUYỆN THEO LỰA CHỌN
+        function loadStory(storyKey) {
+            const story = allStories[storyKey];
+            if (!story) return;
+
+            document.getElementById('main-title').innerText = story.titleEn;
+            document.getElementById('sub-title').innerText = story.titleVi;
+
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '<div class="snap-spacer"></div><div class="snap-spacer"></div>';
+            const spacerAfter = gallery.querySelector('.snap-spacer:last-child');
+
+            currentStoryData = story.data;
+
+            currentStoryData.forEach((item, i) => {
+                const card = document.createElement('div');
+                card.className = 'flashcard';
+                card.dataset.index = i;
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="type-tag">${item.scene}</div>
+                            <div class="english">${item.en}</div>
+                            <div class="audio-icon" onclick="event.stopPropagation(); speak('${item.en.replace(/'/g, "\\'")}')">
+                                <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="type-tag">Dịch Nghĩa</div>
+                            <div class="vietnamese">${item.vi}</div>
+                        </div>
+                    </div>
+                `;
+
+                card.onclick = () => {
+                    if (card.classList.contains('active')) {
+                        card.classList.toggle('flipped');
+                    } else {
+                        card.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+                    }
+                };
+
+                gallery.insertBefore(card, spacerAfter);
+                observer.observe(card);
+            });
+
+            document.getElementById('card-counter').innerText = `1 / ${currentStoryData.length}`;
+            gallery.scrollLeft = 0;
+        }
+
+        // XỬ LÝ DI CHUYỂN
+        window.moveSlide = (direction) => {
+            const cards = document.querySelectorAll('.flashcard');
+            const currentActive = document.querySelector('.flashcard.active');
+            let nextIndex = 0;
+            if (currentActive) nextIndex = parseInt(currentActive.dataset.index) + direction;
+            if (nextIndex >= 0 && nextIndex < cards.length) {
+                cards[nextIndex].scrollIntoView({ behavior: 'smooth', inline: 'center' });
+            }
+        };
+
+        // OBSERVER ĐỂ THEO DÕI THẺ ĐANG XEM
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    document.getElementById('card-counter').innerText = `${parseInt(entry.target.dataset.index) + 1} / ${currentStoryData.length}`;
+                } else {
+                    entry.target.classList.remove('active', 'flipped');
+                }
+            });
+        }, { root: document.getElementById('gallery'), threshold: 0.7 });
+
+        // HIỆU ỨNG SAO BAY (Giữ nguyên của bạn)
+        const canvas = document.getElementById('stars-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        function initCanvas() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            stars = [];
+            for (let i = 0; i < 60; i++) {
+                stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 1.5, opacity: Math.random(), speed: 0.01 });
+            }
+        }
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(s => {
+                s.opacity += s.speed; if (s.opacity > 1 || s.opacity < 0.2) s.speed = -s.speed;
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
+                ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = () => {
+            initCanvas();
+            animate();
+            loadVoices();
+
+            // Tự động tạo danh sách truyện từ allStories
+            const selector = document.getElementById('story-selector');
+            selector.innerHTML = Object.keys(allStories).map(key =>
+                `<option value="${key}">${allStories[key].titleEn} (${allStories[key].titleVi})</option>`
+            ).join('');
+
+            loadStory('snowWhite');
+        };
+        window.addEventListener('resize', initCanvas);
+    </script>
+</body>
+
+</html>

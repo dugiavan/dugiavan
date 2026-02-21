@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Dreamy Grammar - English Learning Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            /* Nền trắng hồng cực nhẹ */
+            --bg-main: #fff5f7;
+            --glass-bg: rgba(255, 240, 245, 0.7);
+            --glass-border: #fce4ec;
+
+            /* Chữ: Xám hồng đậm để hài hòa */
+            --text-dark: #5d4037;
+
+            /* Màu chủ đạo: Hồng Pastel tập trung */
+            --accent-blue: #ffc1e3;
+            /* Màu nút (Hồng sáng) */
+            --accent-pink: #f48fb1;
+            /* Màu nhấn (Hồng đậm hơn) */
+
+            /* Bảng màu Pastel cho Thẻ từ (Tông hồng & màu ấm) */
+            --p-blue: #ffdae9;
+            /* Hồng phấn */
+            --p-pink: #f8bbd0;
+            /* Hồng baby */
+            --p-green: #f48fb1;
+            /* Hồng dâu */
+            --p-purple: #f06292;
+            /* Hồng sen nhạt */
+            --p-yellow: #fce4ec;
+            /* Hồng trắng */
+            --p-orange: #ff80ab;
+            /* Hồng neon nhạt */
+
+            --drop-shadow: 0 8px 30px rgba(244, 143, 177, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Comfortaa', sans-serif;
+            /* Sử dụng biến màu trắng khói đã tạo ở trên */
+            background-color: var(--bg-main);
+
+            /* Tạo hiệu ứng chiều sâu cực nhẹ bằng gradient tâm trắng */
+            background: radial-gradient(circle at center, #ffffff 0%, #fcfcfc 100%);
+
+            color: var(--text-dark);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            position: fixed;
+            width: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        #bg-pattern-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .planet {
+            position: absolute;
+            opacity: 0.5;
+            animation: floatPlanet linear infinite;
+        }
+
+        @keyframes floatPlanet {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(30px, 15px) rotate(-3deg);
+            }
+
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            width: 100%;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            margin: 5px 0;
+            /* Chuyển sang Gradient Xanh - Hồng pastel */
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-pink) 100%);
+
+            /* ĐÃ SỬA: Thêm dòng tiêu chuẩn ở đây */
+            -webkit-background-clip: text;
+            background-clip: text;
+
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 5px 20px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: var(--drop-shadow);
+            margin: 5px 0;
+            display: inline-block;
+        }
+
+        #translation-text {
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            background: rgba(255, 255, 255, 0.35);
+            padding: 15px 25px;
+            border-radius: 25px;
+            margin: 5px auto;
+            width: 90%;
+            max-width: 700px;
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .sentence-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            /* Tăng nhẹ khoảng cách để các ô không dính nhau */
+            justify-content: center;
+            align-items: center;
+            margin: 15px auto;
+            width: 95%;
+            max-width: 850px;
+
+            /* THAY ĐỔI CHÍNH Ở ĐÂY: */
+            background: #ffffff;
+            /* Nền trắng tinh khôi để nổi bật trên nền trắng khói */
+            padding: 25px;
+            border-radius: 25px;
+
+            /* Viền màu xám siêu nhạt để tạo ranh giới */
+            border: 1px solid #f0f0f0;
+
+            /* Đổ bóng nhẹ phía dưới để tạo cảm giác nổi lên khỏi mặt đất */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+
+            position: relative;
+            flex-grow: 1;
+            min-height: 120px;
+            /* Đảm bảo luôn có không gian hiển thị */
+            max-height: 35vh;
+            overflow-y: auto;
+        }
+
+        .word-slot {
+            min-width: 75px;
+            height: 48px;
+            /* Tăng độ đậm của viền và dùng màu xám nhạt để hiện rõ trên nền trắng */
+            border: 2px dashed #d1d9e6;
+            border-radius: 12px;
+            /* Thêm một chút màu nền cực nhạt để phân biệt với nền trắng của body */
+            background: rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
+        }
+
+        .word-slot .card {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border-radius: 10px;
+        }
+
+        /* Hiệu ứng khi ô đã được điền */
+        .word-slot.filled {
+            border: 2px solid var(--accent-pink) !important;
+            background: transparent !important;
+        }
+
+        .word-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            /* Tăng gap nhẹ để các thẻ không dính nhau */
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            /* Giảm nhẹ padding */
+            width: 90%;
+            /* Thay vì 100%, để lộ một chút nền ở hai bên cho thoáng */
+            max-width: 600px;
+            /* Thu hẹp chiều ngang để tập trung vào giữa */
+            min-height: 80px;
+            /* Giảm min-height */
+            flex-shrink: 0;
+            overflow-y: auto;
+            max-height: 25vh;
+            /* Giảm từ 30vh xuống 25vh */
+            margin: 10px auto;
+
+            /* Giao diện Pastel */
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.02);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .card {
+            min-width: 70px;
+            height: 45px;
+            padding: 0 10px;
+            /* Loại bỏ background trắng và border cũ */
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: grab;
+
+            /* Hiệu ứng 3D nhẹ cho thẻ */
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.05), 0 6px 12px rgba(0, 0, 0, 0.03);
+
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            touch-action: none;
+            user-select: none;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s;
+        }
+
+        .dragging {
+            opacity: 0.8;
+            /* Không dùng transform: translate ở đây vì sẽ bị cộng dồn với top/left */
+            pointer-events: none;
+            /* Để pointerup có thể xuyên qua thẻ chạm vào slot bên dưới */
+            cursor: grabbing;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .footer {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 10px 0 20px 0;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            width: 90%;
+            max-width: 300px;
+            padding: 15px 0;
+            border-radius: 40px;
+            border: none;
+
+            /* Đổi từ var(--accent-blue) sang màu đậm hơn để rõ chữ */
+            background: #F06292;
+            color: #fff;
+
+            font-weight: 700;
+            font-family: 'Comfortaa';
+            font-size: 1.2rem;
+            cursor: pointer;
+
+            /* Đổ bóng 3D đậm hơn một chút để thấy rõ khối nút */
+            box-shadow: 0 2px 0 #E57399, 0 5px 10px rgba(244, 143, 177, 0.2);
+
+            transition: all 0.1s ease;
+            position: relative;
+            top: 0;
+
+            /* Bỏ opacity: 0.5 đi để nút hiện rõ ngay từ đầu, 
+       hoặc giữ nguyên nếu bạn muốn nó mờ khi chưa xong câu */
+            opacity: 1;
+        }
+
+        /* Hiệu ứng khi di chuột vào cho đỡ nhạt nhẽo */
+        .btn:hover {
+            background: #6AA9E9;
+        }
+
+        .btn:active {
+            /* Hạ thấp nút xuống 4px */
+            top: 4px;
+            /* Giảm độ dày bóng đổ cho khớp với vị trí mới */
+            box-shadow: 0 2px 0 #E57399, 0 5px 10px rgba(244, 143, 177, 0.2);
+            transform: scale(0.98);
+        }
+
+        .replay-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: white;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid var(--accent-blue);
+            z-index: 30;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .replay-btn svg {
+            width: 26px;
+            height: 26px;
+            fill: var(--accent-blue);
+        }
+
+        @keyframes pulseSuccess {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .correct-blink {
+            animation: pulseSuccess 0.5s ease 2;
+        }
+
+        /* --- Thêm đoạn này vào bên dưới --- */
+        .footer {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .signature {
+            font-size: 0.75rem;
+            color: var(--text-dark);
+            opacity: 0.6;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .signature span {
+            font-weight: 700;
+            background: linear-gradient(135deg, #4a4a6a 0%, #764ba2 100%);
+
+            /* Dòng "cứu tinh" đây ông nhé */
+            -webkit-background-clip: text;
+            background-clip: text;
+
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg-pattern-container"></div>
+
+    <div class="header">
+        <h1>Dreamy Grammar</h1>
+        <div class="stat-card">Điểm: <span id="score">0</span></div>
+        <div id="translation-text">Đang tải...</div>
+        <div id="hint-text" style="color: var(--text-dark); opacity: 0.6; font-size: 0.9rem; margin-top: 5px;">Kéo thả
+            từ vào đúng vị trí!</div>
+        <div class="difficulty-selector" style="margin-top:5px;">
+            <select id="difficulty" onchange="nextLevel()"
+                style="background:var(--glass-bg); border:1px solid var(--glass-border); padding:5px 15px; border-radius:20px; font-family:'Comfortaa'; outline:none;">
+                <option value="easy">Hiện tại Đơn</option>
+                <option value="medium">Hiện tại Tiếp diễn</option>
+                <option value="hard" selected>Trộn Ngẫu nhiên</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="sentence-display" id="drop-zone">
+        <div class="replay-btn" id="replay-btn" onclick="replaySentence()">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="word-pool" id="pool"></div>
+
+    <div class="footer">
+        <button class="btn" onclick="handleNextClick()">TIẾP TỤC ➔</button>
+        <div class="signature">Coded & Designed by <span>DuGiaVăn</span></div>
+    </div>
+
+    <script>
+        let audioUnlocked = false;
+        let availableVoices = [];
+        const synth = window.speechSynthesis;
+
+        // 1. Khởi tạo đối tượng âm thanh duy nhất (Singleton) để tránh load lại nhiều lần
+        const sfx = {
+            correct: new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'),
+            wrong: new Audio('https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3'),
+            drag: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3')
+        };
+
+        // Tiền tải (Preload) âm thanh
+        Object.values(sfx).forEach(sound => {
+            sound.preload = 'auto';
+            sound.load();
+        });
+
+        function initVoices() {
+            let voices = synth.getVoices();
+            if (voices.length > 0) {
+                // Lọc tất cả giọng tiếng Anh
+                availableVoices = voices.filter(v => v.lang.startsWith('en'));
+
+                // Sắp xếp ưu tiên: US -> GB -> các loại tiếng Anh khác
+                availableVoices.sort((a, b) => {
+                    if (a.lang.includes('en-US')) return -1;
+                    if (b.lang.includes('en-US')) return 1;
+                    if (a.lang.includes('en-GB')) return -1;
+                    return 0;
+                });
+            }
+        } // Chỉ cần một dấu này để kết thúc hàm initVoices
+        if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = initVoices;
+
+        function unlockAudio() {
+            if (audioUnlocked) return;
+
+            // Mẹo cho iOS: Phát một đoạn âm thanh ngắn/câm để kích hoạt Audio Context
+            const msg = new SpeechSynthesisUtterance("");
+            synth.speak(msg);
+
+            Object.values(sfx).forEach(sound => {
+                // Chạy và dừng ngay lập tức để "xin quyền" trình duyệt
+                sound.play().then(() => {
+                    sound.pause();
+                    sound.currentTime = 0;
+                }).catch(e => console.log("Audio play blocked", e));
+            });
+
+            // Ép iOS tải lại giọng đọc
+            initVoices();
+
+            audioUnlocked = true;
+            console.log("Audio System Unlocked");
+        }
+        window.addEventListener('pointerdown', unlockAudio, { once: true });
+
+        function speakOnce(text, randomizeVoice = false) {
+            if (!synth) return;
+            synth.cancel();
+
+            // Kiểm tra lại nếu danh sách giọng trống thì lấy lại ngay
+            if (availableVoices.length === 0) {
+                initVoices();
+            }
+
+            const msg = new SpeechSynthesisUtterance(text);
+
+            if (availableVoices.length > 0) {
+                // Nếu không cần ngẫu nhiên, lấy giọng đầu tiên trong danh sách đã sắp xếp (thường là US)
+                msg.voice = randomizeVoice
+                    ? availableVoices[Math.floor(Math.random() * availableVoices.length)]
+                    : availableVoices[0];
+
+                // Ép buộc thuộc tính lang một lần nữa
+                msg.lang = 'en-US';
+            }
+
+            msg.rate = 0.85; // Đọc chậm một chút để nghe rõ trọng âm
+            msg.pitch = 1;
+            synth.speak(msg);
+        }
+
+        // --- CƠ SỞ DỮ LIỆU KHỔNG LỒ (100+ BIẾN THỂ) ---
+        const grammarDB = {
+            subjects: [
+                /* Giữ nguyên các từ cũ của bạn */
+                { en: "I", vi: "Tôi", type: "s1" }, { en: "You", vi: "Bạn", type: "s2" },
+                { en: "We", vi: "Chúng tôi", type: "s2" }, { en: "They", vi: "Họ", type: "s2" },
+                { en: "He", vi: "Anh ấy", type: "s3" }, { en: "She", vi: "Cô ấy", type: "s3" },
+                { en: "The cat", vi: "Con mèo", type: "s3" }, { en: "The dog", vi: "Con chó", type: "s3" },
+                { en: "My father", vi: "Bố của tôi", type: "s3" }, { en: "My mother", vi: "Mẹ của tôi", type: "s3" },
+                { en: "The teacher", vi: "Giáo viên", type: "s3" }, { en: "The lion", vi: "Sư tử", type: "s3" },
+                { en: "The monkey", vi: "Con khỉ", type: "s3" }, { en: "My sister", vi: "Chị gái tôi", type: "s3" },
+                { en: "The robot", vi: "Người máy", type: "s3" }, { en: "The girl", vi: "Cô gái", type: "s3" },
+                { en: "The boy", vi: "Cậu bé", type: "s3" }, { en: "A bird", vi: "Một con chim", type: "s3" },
+                { en: "The doctor", vi: "Bác sĩ", type: "s3" }, { en: "My brother", vi: "Anh trai tôi", type: "s3" },
+
+                /* THÊM MỚI 15 CHỦ NGỮ */
+                { en: "The nurse", vi: "Y tá", type: "s3" },
+                { en: "The chef", vi: "Đầu bếp", type: "s3" },
+                { en: "The pilot", vi: "Phi công", type: "s3" },
+                { en: "The farmer", vi: "Nông dân", type: "s3" },
+                { en: "The rabbit", vi: "Con thỏ", type: "s3" },
+                { en: "The elephant", vi: "Con voi", type: "s3" },
+                { en: "My grandfather", vi: "Ông của tôi", type: "s3" },
+                { en: "My grandmother", vi: "Bà của tôi", type: "s3" },
+                { en: "The student", vi: "Học sinh", type: "s3" },
+                { en: "The astronaut", vi: "Phi hành gia", type: "s3" },
+                { en: "The police officer", vi: "Cảnh sát", type: "s3" },
+                { en: "The artist", vi: "Họa sĩ", type: "s3" },
+                { en: "My cousin", vi: "Anh chị em họ tôi", type: "s3" },
+                { en: "The driver", vi: "Tài xế", type: "s3" },
+                { en: "The king", vi: "Nhà vua", type: "s3" }
+            ],
+            verbs: [
+                /* Giữ nguyên các động từ cũ của bạn... (Ăn, uống, học, chơi...) */
+                { en: "eat", s3: "eats", ing: "eating", vi: "ăn", obj: "an apple", objVi: "một quả táo" },
+                // ... (phần cũ) ...
+                { en: "collect", s3: "collects", ing: "collecting", vi: "thu thập", obj: "shells", objVi: "những vỏ sò" },
+
+                /* THÊM MỚI 35 ĐỘNG TỪ KÈM TÂN NGỮ */
+                { en: "bake", s3: "bakes", ing: "baking", vi: "nướng", obj: "some cookies", objVi: "vài chiếc bánh quy" },
+                { en: "drive", s3: "drives", ing: "driving", vi: "lái", obj: "a red car", objVi: "một chiếc xe màu đỏ" },
+                { en: "ride", s3: "rides", ing: "riding", vi: "cưỡi/lái", obj: "a horse", objVi: "một con ngựa" },
+                { en: "design", s3: "designs", ing: "designing", vi: "thiết kế", obj: "a website", objVi: "một trang web" },
+                { en: "count", s3: "counts", ing: "counting", vi: "đếm", obj: "the stars", objVi: "những ngôi sao" },
+                { en: "hide", s3: "hides", ing: "hiding", vi: "giấu", obj: "a secret", objVi: "một bí mật" },
+                { en: "build", s3: "builds", ing: "building", vi: "xây dựng", obj: "a sandcastle", objVi: "lâu đài cát" },
+                { en: "sweep", s3: "sweeps", ing: "sweeping", vi: "quét", obj: "the floor", objVi: "sàn nhà" },
+                { en: "mop", s3: "mops", ing: "mopping", vi: "lau", obj: "the kitchen", objVi: "nhà bếp" },
+                { en: "water", s3: "waters", ing: "watering", vi: "tưới", obj: "the flowers", objVi: "những bông hoa" },
+                { en: "knock on", s3: "knocks on", ing: "knocking on", vi: "gõ", obj: "the door", objVi: "cửa" },
+                { en: "repair", s3: "repairs", ing: "repairing", vi: "sửa chữa", obj: "the clock", objVi: "chiếc đồng hồ" },
+                { en: "invite", s3: "invites", ing: "inviting", vi: "mời", obj: "a friend", objVi: "một người bạn" },
+                { en: "check", s3: "checks", ing: "checking", vi: "kiểm tra", obj: "the email", objVi: "thư điện tử" },
+                { en: "save", s3: "saves", ing: "saving", vi: "tiết kiệm", obj: "money", objVi: "tiền bạc" },
+                { en: "choose", s3: "chooses", ing: "choosing", vi: "chọn", obj: "a gift", objVi: "một món quà" },
+                { en: "explain", s3: "explains", ing: "explaining", vi: "giải thích", obj: "the lesson", objVi: "bài học" },
+                { en: "send", s3: "sends", ing: "sending", vi: "gửi", obj: "a message", objVi: "một tin nhắn" },
+                { en: "comb", s3: "combs", ing: "combing", vi: "chải", obj: "the hair", objVi: "mái tóc" },
+                { en: "brush", s3: "brushes", ing: "brushing", vi: "đánh", obj: "the teeth", objVi: "răng" },
+                { en: "look for", s3: "looks for", ing: "looking for", vi: "tìm kiếm", obj: "the glasses", objVi: "chiếc kính" },
+                { en: "forget", s3: "forgets", ing: "forgetting", vi: "quên", obj: "the umbrella", objVi: "chiếc ô" },
+                { en: "remember", s3: "remembers", ing: "remembering", vi: "nhớ", obj: "my name", objVi: "tên của tôi" },
+                { en: "need", s3: "needs", ing: "needing", vi: "cần", obj: "some help", objVi: "sự giúp đỡ" },
+                { en: "start", s3: "starts", ing: "starting", vi: "bắt đầu", obj: "the engine", objVi: "động cơ" },
+                { en: "finish", s3: "finishes", ing: "finishing", vi: "hoàn thành", obj: "the homework", objVi: "bài tập về nhà" },
+                { en: "throw away", s3: "throws away", ing: "throwing away", vi: "vứt bỏ", obj: "the trash", objVi: "rác" },
+                { en: "shake", s3: "shakes", ing: "shaking", vi: "lắc", obj: "the bottle", objVi: "cái chai" },
+                { en: "explore", s3: "explores", ing: "exploring", vi: "khám phá", obj: "the cave", objVi: "hang động" },
+                { en: "carry", s3: "carries", ing: "carrying", vi: "bế/mang", obj: "a puppy", objVi: "một chú chó con" },
+                { en: "mix", s3: "mixes", ing: "mixing", vi: "trộn", obj: "the salad", objVi: "món salad" },
+                { en: "lift", s3: "lifts", ing: "lifting", vi: "nhấc", obj: "a heavy bag", objVi: "một cái túi nặng" },
+                { en: "knock down", s3: "knocks down", ing: "knocking down", vi: "đánh sập", obj: "the wall", objVi: "bức tường" },
+                { en: "turn on", s3: "turns on", ing: "turning on", vi: "bật", obj: "the light", objVi: "đèn" },
+                { en: "turn off", s3: "turns off", ing: "turning off", vi: "tắt", obj: "the fan", objVi: "quạt" }
+            ]
+        };
+
+        let currentSentenceData = {};
+        let userProgress = [];
+        let score = 0;
+        let activeCard = null;
+        let offset = { x: 0, y: 0 };
+        let isCorrectState = false;
+
+        function generateSentence(mode) {
+            const sub = grammarDB.subjects[Math.floor(Math.random() * grammarDB.subjects.length)];
+            const v = grammarDB.verbs[Math.floor(Math.random() * grammarDB.verbs.length)];
+            const sentenceType = Math.floor(Math.random() * 3); // 0: Khẳng định, 1: Phủ định, 2: Nghi vấn
+            let res = { en: [], vi: "" };
+
+            if (mode === 'easy') {
+                // THÌ HIỆN TẠI ĐƠN
+                if (sentenceType === 0) {
+                    res.en = [sub.en, sub.type === 's3' ? v.s3 : v.en, v.obj];
+                    res.vi = `${sub.vi} ${v.vi} ${v.objVi}`;
+                } else if (sentenceType === 1) {
+                    res.en = [sub.en, sub.type === 's3' ? "does" : "do", "not", v.en, v.obj];
+                    res.vi = `${sub.vi} không ${v.vi} ${v.objVi}`;
+                } else {
+                    res.en = [sub.type === 's3' ? "Does" : "Do", sub.en, v.en, v.obj, "?"];
+                    res.vi = `Có phải ${sub.vi.toLowerCase()} ${v.vi} ${v.objVi} không?`;
+                }
+            } else {
+                // THÌ HIỆN TẠI TIẾP DIỄN
+                const be = sub.type === 's1' ? "am" : (sub.type === 's3' ? "is" : "are");
+                if (sentenceType === 0) {
+                    res.en = [sub.en, be, v.ing, v.obj];
+                    res.vi = `${sub.vi} đang ${v.vi} ${v.objVi}`;
+                } else if (sentenceType === 1) {
+                    res.en = [sub.en, be, "not", v.ing, v.obj];
+                    res.vi = `${sub.vi} đang không ${v.vi} ${v.objVi}`;
+                } else {
+                    res.en = [be.charAt(0).toUpperCase() + be.slice(1), sub.en, v.ing, v.obj, "?"];
+                    res.vi = `Có phải ${sub.vi.toLowerCase()} đang ${v.vi} ${v.objVi} không?`;
+                }
+            }
+
+            // Tách các cụm từ thành từng từ đơn để người chơi xếp
+            let splitEn = [];
+            res.en.forEach(phrase => {
+                if (phrase === "?") splitEn.push("?");
+                else splitEn.push(...phrase.split(" "));
+            });
+            res.en = splitEn;
+
+            return res;
+        }
+
+        function nextLevel() {
+            isCorrectState = false;
+            // Làm mờ nút TIẾP TỤC khi bắt đầu câu mới
+            document.querySelector('.btn').style.opacity = "0.5";
+
+            document.getElementById('replay-btn').style.display = 'none';
+            const diff = document.getElementById('difficulty').value;
+            let mode = diff === 'hard' ? (Math.random() > 0.5 ? 'easy' : 'medium') : diff;
+
+            currentSentenceData = generateSentence(mode);
+            document.getElementById('translation-text').textContent = currentSentenceData.vi;
+            userProgress = new Array(currentSentenceData.en.length).fill(null);
+
+            const dropZone = document.getElementById('drop-zone');
+            const pool = document.getElementById('pool');
+            dropZone.querySelectorAll('.word-slot, .card').forEach(el => el.remove());
+            pool.innerHTML = '';
+
+            currentSentenceData.en.forEach((_, i) => {
+                const slot = document.createElement('div');
+                slot.className = 'word-slot';
+                slot.dataset.index = i;
+                dropZone.appendChild(slot);
+            });
+
+            // --- CẬP NHẬT MÀU SẮC MACARON ĐẬM ĐÀ TẠI ĐÂY ---
+            const shuffled = [...currentSentenceData.en].sort(() => Math.random() - 0.5);
+
+            // Lấy danh sách biến màu từ :root để đảm bảo độ tươi
+            const colors = [
+                'var(--p-blue)',
+                'var(--p-pink)',
+                'var(--p-green)',
+                'var(--p-purple)',
+                'var(--p-yellow)',
+                'var(--p-orange)'
+            ];
+
+            shuffled.forEach(word => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.textContent = word;
+
+                // Gán màu ngẫu nhiên
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                card.style.backgroundColor = randomColor;
+
+                // Hiệu ứng 3D đậm nét hơn: Đổ bóng trùng màu hoặc đổ bóng xám rõ ràng
+                card.style.borderBottom = "4px solid rgba(0, 0, 0, 0.15)";
+                card.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.08)";
+
+                card.addEventListener('pointerdown', onStart);
+                pool.appendChild(card);
+            });
+            // --------------------------------------------
+
+            document.getElementById('hint-text').textContent = "Kéo thả từ vào đúng vị trí!";
+            document.getElementById('hint-text').style.color = 'var(--text-dark)';
+        }
+
+        // THÊM HÀM NÀY VÀO ĐÂY
+        function handleNextClick() {
+            if (isCorrectState) {
+                nextLevel();
+            } else {
+                // Hiệu ứng cảnh báo nếu chưa xong câu
+                const hint = document.getElementById('hint-text');
+                hint.textContent = "⚠️ Bạn phải xếp đúng câu này mới được đi tiếp!";
+                hint.style.color = '#D32F2F';
+
+                // Rung nhẹ khung hình để báo hiệu
+                const dropZone = document.getElementById('drop-zone');
+                dropZone.style.transform = 'translateX(5px)';
+                setTimeout(() => dropZone.style.transform = 'translateX(-5px)', 50);
+                setTimeout(() => dropZone.style.transform = 'translateX(0)', 100);
+
+                sfx.wrong.currentTime = 0;
+                sfx.wrong.play().catch(() => { });
+            }
+        }
+
+        function onStart(e) {
+            if (isCorrectState) return;
+            activeCard = e.currentTarget;
+
+            // Khóa pointer để bắt sự kiện di chuyển kể cả khi ngón tay rời khỏi thẻ
+            activeCard.setPointerCapture(e.pointerId);
+
+            sfx.drag.currentTime = 0;
+            sfx.drag.play().catch(() => { });
+            speakOnce(activeCard.textContent, true);
+
+            const rect = activeCard.getBoundingClientRect();
+
+            // Tính offset: khoảng cách từ điểm chạm đến góc trên bên trái của thẻ
+            offset = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+
+            // Nếu đang ở trong ô, đánh dấu ô đó trống
+            if (activeCard.parentElement.classList.contains('word-slot')) {
+                userProgress[activeCard.parentElement.dataset.index] = null;
+                activeCard.parentElement.classList.remove('filled');
+            }
+
+            // Thiết lập trạng thái kéo ngay lập tức
+            activeCard.classList.add('dragging');
+
+            // Ép vị trí fixed ngay tại chỗ nó đang đứng để không bị nhảy
+            activeCard.style.position = 'fixed';
+            activeCard.style.width = rect.width + 'px';
+            activeCard.style.height = rect.height + 'px';
+            activeCard.style.left = rect.left + 'px';
+            activeCard.style.top = rect.top + 'px';
+            activeCard.style.zIndex = "9999";
+
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', onEnd);
+        }
+
+        function onMove(e) {
+            if (!activeCard) return;
+            // Cập nhật vị trí trực tiếp, bỏ requestAnimationFrame để tránh trễ (lag)
+            activeCard.style.left = (e.clientX - offset.x) + 'px';
+            activeCard.style.top = (e.clientY - offset.y) + 'px';
+        }
+
+        function onEnd(e) {
+            if (!activeCard) return;
+
+            const slots = document.querySelectorAll('.word-slot');
+            const pool = document.getElementById('pool');
+            let placed = false;
+
+            // Kiểm tra xem vị trí buông tay có nằm trong ô nào không
+            slots.forEach(slot => {
+                const r = slot.getBoundingClientRect();
+                if (e.clientX > r.left && e.clientX < r.right &&
+                    e.clientY > r.top && e.clientY < r.bottom) {
+
+                    // Nếu ô trống thì đặt vào
+                    if (!userProgress[slot.dataset.index]) {
+                        slot.appendChild(activeCard);
+                        slot.classList.add('filled');
+                        userProgress[slot.dataset.index] = activeCard.textContent;
+                        placed = true;
+
+                        sfx.correct.currentTime = 0;
+                        sfx.correct.play().catch(() => { });
+                        checkWin();
+                    }
+                }
+            });
+
+            // Nếu không đặt vào ô nào hoặc ô đã đầy, trả về pool
+            if (!placed) {
+                pool.appendChild(activeCard);
+            }
+
+            // QUAN TRỌNG: Giải phóng pointer và xóa style inline
+            activeCard.releasePointerCapture(e.pointerId);
+            activeCard.classList.remove('dragging');
+
+            // Xóa toàn bộ style tạm thời để thẻ quay về layout bình thường của CSS
+            activeCard.style.position = "";
+            activeCard.style.left = "";
+            activeCard.style.top = "";
+            activeCard.style.width = "";
+            activeCard.style.height = "";
+            activeCard.style.zIndex = "";
+            activeCard.style.margin = "";
+
+            activeCard = null;
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onEnd);
+        }
+
+        function checkWin() {
+            if (userProgress.every(v => v !== null)) {
+                const isCorrect = userProgress.every((v, i) => v.toLowerCase() === currentSentenceData.en[i].toLowerCase());
+                if (isCorrect) {
+                    isCorrectState = true;
+
+                    // Thêm dòng này: Làm nút TIẾP TỤC sáng rõ lên khi thắng
+                    document.querySelector('.btn').style.opacity = "1";
+
+                    score += 50;
+                    document.getElementById('score').textContent = score;
+                    document.getElementById('replay-btn').style.display = 'flex';
+                    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                    document.getElementById('hint-text').textContent = "✨ CHÍNH XÁC! TUYỆT VỜI ✨";
+                    document.getElementById('hint-text').style.color = '#2E7D32';
+                    document.querySelectorAll('.word-slot').forEach(s => s.classList.add('correct-blink'));
+                    setTimeout(() => speakOnce(userProgress.join(" "), false), 500);
+                } else {
+                    document.getElementById('hint-text').textContent = "Sai rồi, hãy thử lại nhé!";
+                    document.getElementById('hint-text').style.color = '#D32F2F';
+                    sfx.wrong.currentTime = 0;
+                    sfx.wrong.play().catch(() => { });
+                }
+            }
+        }
+
+        function replaySentence() {
+            if (isCorrectState) speakOnce(userProgress.join(" "), false);
+        }
+
+        function initBG() {
+            const container = document.getElementById('bg-pattern-container');
+            // Bảng màu Soft Pastel mới: Xanh nhạt, Hồng nhạt, Mint, Vàng chanh nhạt
+            const colors = ['#D6EAF8', '#FADBD8', '#D5F5E3', '#FCF3CF'];
+
+            for (let i = 0; i < 6; i++) { // Tăng lên 6 hành tinh cho sinh động
+                const p = document.createElement('div');
+                p.className = 'planet';
+                // Độ mờ (opacity) thấp để hòa vào nền trắng
+                p.innerHTML = `<svg viewBox="0 0 100 100" width="80" height="80">
+            <circle cx="50" cy="50" r="30" fill="${colors[i % colors.length]}" opacity="0.5"/>
+        </svg>`;
+                p.style.left = Math.random() * 85 + 'vw';
+                p.style.top = Math.random() * 85 + 'vh';
+                p.style.animationDuration = (25 + Math.random() * 20) + 's';
+                container.appendChild(p);
+            }
+        }
+
+        window.onload = () => { initBG(); nextLevel(); initVoices(); };
+    </script>
+</body>
+
+</html>

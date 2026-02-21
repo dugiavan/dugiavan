@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="background: rgba(0, 0, 0, 0.3); padding: 30px; border-radius: 15px; backdrop-filter: blur(5px);">
+    <h1 style="color: var(--accent-gold); margin-bottom: 20px;">Danh Sách Dự Án</h1>
+
+    <div style="text-align: left; display: inline-block;">
+        {% for p in projects %}
+        <div style="margin: 15px 0; font-size: 1.2rem;">
+            🚀 <strong style="color: var(--accent-gold);">{{ p }}</strong>
+            <span style="opacity: 0.7; font-size: 0.9rem;">- Đang phát triển...</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <p style="margin-top: 30px; opacity: 0.5;">(Đây là danh sách dự kiến của Gia Văn trong năm 2026)</p>
+</div>
+{% endblock %}

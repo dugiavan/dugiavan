@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Endless Alphabet</title>
+
+    <meta name="theme-color" content="#00f2ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Endless Alphabet">
+
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3843/3843517.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3843/3843517.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* Chống kéo trang gây giật lag trên điện thoại */
+        html,
+        body {
+            overflow: hidden;
+            height: 100%;
+            position: fixed;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --neon-blue: #00f2ff;
+            --neon-pink: #ff007f;
+            --card-radius: 24px;
+            --border-glow: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            /* Chặn chọn văn bản khi đang kéo thả chữ */
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: none;
+            color: #ffffff;
+            position: relative;
+            background-color: #f0f2f5;
+        }
+
+        /* --- Kỹ thuật chuyển nền Seamless --- */
+        #bg-static,
+        #bg-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            transition: opacity 3s ease-in-out;
+        }
+
+        #bg-static {
+            opacity: 1;
+        }
+
+        #bg-transition {
+            opacity: 0;
+        }
+
+        /* Lưới điện tử mờ */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        #effect-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        #bg-animation-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-object {
+            position: absolute;
+            font-size: 5rem;
+            opacity: 0;
+            filter: blur(1px);
+            animation: float-around 20s linear infinite;
+        }
+
+        @keyframes float-around {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.2;
+            }
+
+            90% {
+                opacity: 0.2;
+            }
+
+            100% {
+                transform: translate(var(--move-x), var(--move-y)) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        #game-header {
+            text-align: center;
+            margin-bottom: 10px;
+            z-index: 10;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0;
+            font-weight: 900;
+            background: linear-gradient(180deg, #fff 0%, #00f2ff 100%);
+
+            /* Dòng fix lỗi màu vàng đây ông nhé */
+            -webkit-background-clip: text;
+            background-clip: text;
+
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.5));
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-style: italic;
+        }
+
+        #word-meaning {
+            font-size: 1.5rem;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 900;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        #word-container {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0 30px 0;
+            background: var(--glass-bg);
+            padding: 20px;
+            border-radius: 40px;
+            border: 2px solid var(--border-glow);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(15px);
+            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .letter-slot {
+            width: 65px;
+            height: 85px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--card-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.1);
+        }
+
+        .letter-pool {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 900px;
+            z-index: 10;
+        }
+
+        .letter-card {
+            width: 65px;
+            height: 85px;
+            border-radius: var(--card-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #FFF;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+            position: relative;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .c1 {
+            background: linear-gradient(135deg, #FF007A, #81007F);
+        }
+
+        .c2 {
+            background: linear-gradient(135deg, #00D2FF, #3A7BD5);
+        }
+
+        .c3 {
+            background: linear-gradient(135deg, #00FF87, #60EFFF);
+        }
+
+        .c4 {
+            background: linear-gradient(135deg, #F2994A, #F2C94C);
+        }
+
+        .c5 {
+            background: linear-gradient(135deg, #7000FF, #D300C5);
+        }
+
+        .dragging {
+            opacity: 1;
+            transform: scale(1.2);
+            pointer-events: none;
+            position: fixed;
+            z-index: 1000;
+            animation: energy-pulse 0.2s infinite;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.6);
+            border: 3px solid #fff;
+        }
+
+        @keyframes energy-pulse {
+            0% {
+                transform: scale(1.2) rotate(-8deg) skew(5deg);
+            }
+
+            50% {
+                transform: scale(1.4) rotate(0deg) skew(-5deg);
+            }
+
+            100% {
+                transform: scale(1.2) rotate(8deg) skew(5deg);
+            }
+        }
+
+        #victory-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(20px);
+        }
+
+        .action-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+            z-index: 10;
+        }
+
+        #next-btn,
+        #replay-btn {
+            display: none;
+            padding: 12px 40px;
+            font-size: 1.3rem;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Exo 2';
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        #next-btn {
+            background: linear-gradient(90deg, #00f2ff, #ff007f);
+        }
+
+        #replay-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+        }
+
+        .footer-credit {
+            margin-top: auto;
+            padding-bottom: 10px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="bg-static"></div>
+    <div id="bg-transition"></div>
+    <div class="grid-overlay"></div>
+
+    <canvas id="effect-canvas"></canvas>
+    <div id="bg-animation-container"></div>
+    <div id="victory-overlay">
+        <div id="victory-word" class="victory-text"
+            style="font-size: 5rem; font-weight: 900; color: #fff; text-shadow: 0 0 20px #ff007f;"></div>
+    </div>
+
+    <div id="game-header">
+        <h1>Endless-Alphabet</h1>
+    </div>
+    <div id="word-meaning"></div>
+    <div id="word-container"></div>
+    <div id="letter-pool" class="letter-pool"></div>
+
+    <div class="action-container">
+        <button id="replay-btn" onclick="repeatWord()">🔊 ĐỌC LẠI</button>
+        <button id="next-btn" onclick="initGame()">TIẾP THEO &raquo;</button>
+    </div>
+
+    <div class="footer-credit">Coded & Designed by DuGiaVăn</div>
+
+    <script>
+        const wordsData = [
+            { word: "APPLE", meaning: "Quả táo" }, { word: "ANT", meaning: "Con kiến" }, { word: "ARM", meaning: "Cánh tay" }, { word: "AXE", meaning: "Cái rìu" },
+            { word: "BALL", meaning: "Quả bóng" }, { word: "BEAR", meaning: "Con gấu" }, { word: "BIRD", meaning: "Con chim" }, { word: "BOAT", meaning: "Con thuyền" },
+            { word: "BOOK", meaning: "Quyển sách" }, { word: "BUS", meaning: "Xe buýt" }, { word: "BEE", meaning: "Con ong" }, { word: "BOX", meaning: "Cái hộp" },
+            { word: "CAKE", meaning: "Bánh ngọt" }, { word: "CAT", meaning: "Con mèo" }, { word: "CAR", meaning: "Xe ô tô" }, { word: "COW", meaning: "Con bò" },
+            { word: "CUP", meaning: "Cái tách" }, { word: "CHAIR", meaning: "Cái ghế" }, { word: "CORN", meaning: "Ngô (Bắp)" }, { word: "CRAB", meaning: "Con cua" },
+            { word: "DOG", meaning: "Con chó" }, { word: "DUCK", meaning: "Con vịt" }, { word: "DOLL", meaning: "Búp bê" }, { word: "DRUM", meaning: "Cái trống" },
+            { word: "DEER", meaning: "Con nai" }, { word: "DESK", meaning: "Bàn làm việc" }, { word: "DOOR", meaning: "Cái cửa" }, { word: "DISH", meaning: "Cái đĩa" },
+            { word: "EGG", meaning: "Quả trứng" }, { word: "EAR", meaning: "Cái tai" }, { word: "EYE", meaning: "Con mắt" }, { word: "ELM", meaning: "Cây đu" },
+            { word: "FISH", meaning: "Con cá" }, { word: "FOX", meaning: "Con cáo" }, { word: "FROG", meaning: "Con ếch" }, { word: "FAN", meaning: "Cái quạt" },
+            { word: "FIRE", meaning: "Ngọn lửa" }, { word: "FORK", meaning: "Cái nĩa" }, { word: "FLAG", meaning: "Lá cờ" }, { word: "FOOT", meaning: "Bàn chân" },
+            { word: "GOAT", meaning: "Con dê" }, { word: "GIRL", meaning: "Cô gái" }, { word: "GIFT", meaning: "Món quà" }, { word: "GATE", meaning: "Cái cổng" },
+            { word: "GOLD", meaning: "Vàng" }, { word: "GRAPE", meaning: "Quả nho" }, { word: "GAME", meaning: "Trò chơi" }, { word: "GOOSE", meaning: "Con ngỗng" },
+            { word: "HAT", meaning: "Cái mũ" }, { word: "HEN", meaning: "Con gà mái" }, { word: "HIPPO", meaning: "Hà mã" }, { word: "HAND", meaning: "Bàn tay" },
+            { word: "HOME", meaning: "Nhà" }, { word: "HORSE", meaning: "Con ngựa" }, { word: "HILL", meaning: "Ngọn đồi" }, { word: "HOSE", meaning: "Vòi nước" },
+            { word: "ICE", meaning: "Nước đá" }, { word: "INK", meaning: "Mực" }, { word: "IRON", meaning: "Cái bàn là" }, { word: "ISLAND", meaning: "Hòn đảo" },
+            { word: "JAM", meaning: "Mứt" }, { word: "JAR", meaning: "Cái lọ" }, { word: "JET", meaning: "Máy bay phản lực" }, { word: "JEEP", meaning: "Xe Jeep" },
+            { word: "KITE", meaning: "Cái diều" }, { word: "KING", meaning: "Vua" }, { word: "KEY", meaning: "Chìa khóa" }, { word: "KIWI", meaning: "Quả Kiwi" },
+            { word: "LION", meaning: "Sư tử" }, { word: "LAMP", meaning: "Cái đèn" }, { word: "LEAF", meaning: "Chiếc lá" }, { word: "LEMON", meaning: "Quả chanh" },
+            { word: "LAKE", meaning: "Hồ nước" }, { word: "LAMB", meaning: "Con cừu non" }, { word: "LOCK", meaning: "Ổ khóa" }, { word: "LOG", meaning: "Khúc gỗ" },
+            { word: "MOON", meaning: "Mặt trăng" }, { word: "MILK", meaning: "Sữa" }, { word: "MOUSE", meaning: "Con chuột" }, { word: "MONEY", meaning: "Tiền" },
+            { word: "MAP", meaning: "Bản đồ" }, { word: "MASK", meaning: "Khẩu trang" }, { word: "MUG", meaning: "Cái ca" }, { word: "MELON", meaning: "Quả dưa" },
+            { word: "NEST", meaning: "Cái tổ" }, { word: "NOSE", meaning: "Cái mũi" }, { word: "NET", meaning: "Cái lưới" }, { word: "NINE", meaning: "Số 9" },
+            { word: "NAIL", meaning: "Cái đinh" }, { word: "NOTE", meaning: "Ghi chú" }, { word: "NUT", meaning: "Hạt đỗ" }, { word: "NIGHT", meaning: "Ban đêm" },
+            { word: "OWL", meaning: "Con cú" }, { word: "OX", meaning: "Con bò đực" }, { word: "ORANGE", meaning: "Quả cam" }, { word: "OIL", meaning: "Dầu ăn" },
+            { word: "PIG", meaning: "Con lợn" }, { word: "PEN", meaning: "Cây bút" }, { word: "PEAR", meaning: "Quả lê" }, { word: "PIANO", meaning: "Đàn Piano" },
+            { word: "PARK", meaning: "Công viên" }, { word: "POOL", meaning: "Bể bơi" }, { word: "PIZZA", meaning: "Bánh Pizza" }, { word: "PLANE", meaning: "Máy bay" },
+            { word: "QUEEN", meaning: "Nữ hoàng" }, { word: "QUIZ", meaning: "Câu đố" }, { word: "QUILT", meaning: "Chăn bông" }, { word: "QUACK", meaning: "Tiếng vịt kêu" },
+            { word: "RAT", meaning: "Con chuột cống" }, { word: "RAIN", meaning: "Cơn mưa" }, { word: "ROSE", meaning: "Hoa hồng" }, { word: "ROBOT", meaning: "Người máy" },
+            { word: "RING", meaning: "Nhẫn" }, { word: "ROCK", meaning: "Viên đá" }, { word: "ROAD", meaning: "Con đường" }, { word: "ROPE", meaning: "Sợi dây" },
+            { word: "SUN", meaning: "Mặt trời" }, { word: "STAR", meaning: "Ngôi sao" }, { word: "SHIP", meaning: "Tàu thủy" }, { word: "SNAKE", meaning: "Con rắn" },
+            { word: "SHIRT", meaning: "Áo sơ mi" }, { word: "SHOE", meaning: "Chiếc giày" }, { word: "SNOW", meaning: "Tuyết" }, { word: "SOUP", meaning: "Súp" },
+            { word: "TIGER", meaning: "Con hổ" }, { word: "TREE", meaning: "Cây" }, { word: "TOY", meaning: "Đồ chơi" }, { word: "TRAIN", meaning: "Tàu hỏa" },
+            { word: "TRUCK", meaning: "Xe tải" }, { word: "TENT", meaning: "Cái lều" }, { word: "TABLE", meaning: "Cái bàn" }, { word: "TAXI", meaning: "Xe Taxi" },
+            { word: "UP", meaning: "Lên trên" }, { word: "UFO", meaning: "Đĩa bay" }, { word: "UNCLE", meaning: "Bác/Chú" }, { word: "UNIT", meaning: "Đơn vị" },
+            { word: "VAN", meaning: "Xe tải nhỏ" }, { word: "VASE", meaning: "Bình hoa" }, { word: "VEST", meaning: "Áo vest" }, { word: "VINE", meaning: "Cây dây leo" },
+            { word: "WOLF", meaning: "Con sói" }, { word: "WATCH", meaning: "Đồng hồ" }, { word: "WATER", meaning: "Nước" }, { word: "WHALE", meaning: "Cá voi" },
+            { word: "WIND", meaning: "Gió" }, { word: "WALL", meaning: "Bức tường" }, { word: "WOOD", meaning: "Gỗ" }, { word: "WORM", meaning: "Con giun" },
+            { word: "XYLO", meaning: "Đàn mộc cầm" }, { word: "XRAY", meaning: "Tia X" }, { word: "BOXER", meaning: "Võ sĩ" }, { word: "TAXI", meaning: "Xe taxi" },
+            { word: "YO-YO", meaning: "Cái Yo-yo" }, { word: "YAK", meaning: "Bò Tây Tạng" }, { word: "YAM", meaning: "Khoai từ" }, { word: "YARD", meaning: "Cái sân" },
+            { word: "ZEBRA", meaning: "Ngựa vằn" }, { word: "ZOO", meaning: "Vườn thú" }, { word: "ZERO", meaning: "Số không" }, { word: "ZIP", meaning: "Khóa kéo" },
+            { word: "BREAD", meaning: "Bánh mì" }, { word: "CHIP", meaning: "Khoai tây chiên" }, { word: "DRINK", meaning: "Đồ uống" }, { word: "FRUIT", meaning: "Trái cây" },
+            { word: "GREEN", meaning: "Màu xanh lá" }, { word: "HONEY", meaning: "Mật ong" }, { word: "JUICE", meaning: "Nước ép" }, { word: "KNIFE", meaning: "Con dao" },
+            { word: "LUNCH", meaning: "Bữa trưa" }, { word: "MUSIC", meaning: "Âm nhạc" }, { word: "NIGHT", meaning: "Ban đêm" }, { word: "OCEAN", meaning: "Đại dương" },
+            { word: "PAPER", meaning: "Giấy" }, { word: "RADIO", meaning: "Đài Radio" }, { word: "SPOON", meaning: "Cái thìa" }, { word: "TOAST", meaning: "Bánh mì nướng" },
+            { word: "UNCLE", meaning: "Chú, bác" }, { word: "VOICE", meaning: "Giọng nói" }, { word: "WHEEL", meaning: "Bánh xe" }, { word: "YOUNG", meaning: "Trẻ tuổi" },
+            { word: "SHARK", meaning: "Cá mập" }, { word: "SMILE", meaning: "Nụ cười" }, { word: "SPACE", meaning: "Vũ trụ" }, { word: "EARTH", meaning: "Trái đất" },
+            { word: "HEART", meaning: "Trái tim" }, { word: "BRAIN", meaning: "Não bộ" }, { word: "CLOUD", meaning: "Đám mây" }, { word: "RAINY", meaning: "Trời mưa" },
+            { word: "SNOWY", meaning: "Trời tuyết" }, { word: "STORM", meaning: "Bão" }, { word: "SUNNY", meaning: "Trời nắng" }, { word: "BEACH", meaning: "Bãi biển" },
+            { word: "RIVER", meaning: "Con sông" }, { word: "FIELD", meaning: "Cánh đồng" }, { word: "GRASS", meaning: "Cỏ" }, { word: "FLOWER", meaning: "Bông hoa" },
+            { word: "PHONE", meaning: "Điện thoại" }, { word: "PHOTO", meaning: "Bức ảnh" }, { word: "GLASS", meaning: "Cái cốc" }, { word: "BOWL", meaning: "Cái bát" },
+            { word: "SHIRT", meaning: "Áo sơ mi" }, { word: "PANTS", meaning: "Quần dài" }, { word: "DRESS", meaning: "Váy liền" }, { word: "SKIRT", meaning: "Chân váy" },
+            { word: "HAPPY", meaning: "Vui vẻ" }, { word: "ANGRY", meaning: "Tức giận" }, { word: "SLEEPY", meaning: "Buồn ngủ" }, { word: "HUNGRY", meaning: "Đói bụng" }
+        ];
+
+        const pastelGradients = [
+            "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+            "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)",
+            "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+            "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)",
+            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            "linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)",
+            "linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)",
+            "linear-gradient(135deg, #96e6a1 0%, #d4fc79 100%)"
+        ];
+
+        let currentWordIndex = 0, activeCard = null, offset = { x: 0, y: 0 }, mousePos = { x: 0, y: 0 };
+        let speechInterval = null, lastCompletedWord = "";
+        let allVoices = [];
+
+        function loadVoices() {
+            allVoices = window.speechSynthesis.getVoices().filter(v => v.lang.includes('en'));
+        }
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        loadVoices();
+        let currentEffectId = 0, currentGradientIndex = 0;
+
+        const canvas = document.getElementById('effect-canvas');
+        const ctx = canvas.getContext('2d');
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+        // --- HÀM ĐỔI NỀN MƯỢT MÀ (SEAMLESS) ---
+        const bgStatic = document.getElementById('bg-static');
+        const bgTransition = document.getElementById('bg-transition');
+        bgStatic.style.background = pastelGradients[0];
+
+        function rotateBackground() {
+            currentGradientIndex = (currentGradientIndex + 1) % pastelGradients.length;
+            const nextGradient = pastelGradients[currentGradientIndex];
+
+            // Hiện lớp transition lên với màu mới
+            bgTransition.style.background = nextGradient;
+            bgTransition.style.opacity = 1;
+
+            setTimeout(() => {
+                // Sau khi transition hiện xong (3s), gán màu đó cho static và ẩn transition đi để chuẩn bị cho lần sau
+                bgStatic.style.background = nextGradient;
+                bgTransition.style.opacity = 0;
+            }, 3100);
+        }
+        setInterval(rotateBackground, 8000);
+
+        // --- EFFECT ENGINE (10 hiệu ứng) ---
+        const effects = [
+            (x, y) => { // 1. Electric
+                for (let i = 0; i < 5; i++) {
+                    ctx.beginPath(); ctx.strokeStyle = '#00f2ff'; ctx.lineWidth = 2;
+                    let tx = x + (Math.random() - 0.5) * 80, ty = y + (Math.random() - 0.5) * 80;
+                    ctx.moveTo(tx, ty);
+                    for (let j = 0; j < 5; j++) { tx += (Math.random() - 0.5) * 40; ty += (Math.random() - 0.5) * 40; ctx.lineTo(tx, ty); }
+                    ctx.stroke();
+                }
+            },
+            (x, y) => { // 2. Fire
+                for (let i = 0; i < 10; i++) {
+                    ctx.beginPath(); ctx.fillStyle = `rgba(255, ${Math.random() * 100}, 0, 0.6)`;
+                    ctx.arc(x + (Math.random() - 0.5) * 60, y + (Math.random() - 0.5) * 60 - (Date.now() % 100), Math.random() * 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            },
+            (x, y) => { // 3. Stars
+                for (let i = 0; i < 15; i++) { ctx.fillStyle = "#fff"; ctx.fillRect(x + (Math.random() - 0.5) * 100, y + (Math.random() - 0.5) * 100, 3, 3); }
+            },
+            (x, y) => { // 4. Pulse
+                ctx.beginPath(); ctx.strokeStyle = "#ff007f"; ctx.lineWidth = 3;
+                ctx.arc(x, y, (Date.now() / 5) % 100, 0, Math.PI * 2); ctx.stroke();
+            },
+            (x, y) => { // 5. Matrix
+                ctx.fillStyle = "#0f0"; ctx.font = "20px monospace";
+                ctx.fillText(Math.floor(Math.random() * 9), x + (Math.random() - 0.5) * 80, y + (Math.random() - 0.5) * 80);
+            },
+            (x, y) => { // 6. Snow
+                for (let i = 0; i < 8; i++) { ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x + (Math.random() - 0.5) * 100, y + (Math.random() - 0.5) * 100, 4, 0, Math.PI * 2); ctx.fill(); }
+            },
+            (x, y) => { // 7. Bubbles
+                for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.arc(x + (Math.random() - 0.5) * 120, y + (Math.random() - 0.5) * 120, Math.random() * 10, 0, Math.PI * 2); ctx.stroke(); }
+            },
+            (x, y) => { // 8. Petals
+                ctx.fillStyle = "#ffb7c5"; for (let i = 0; i < 6; i++) ctx.fillRect(x + (Math.random() - 0.5) * 90, y + (Math.random() - 0.5) * 90, 8, 4);
+            },
+            (x, y) => { // 9. Glow
+                let grad = ctx.createRadialGradient(x, y, 0, x, y, 60); grad.addColorStop(0, "rgba(255, 255, 255, 0.4)"); grad.addColorStop(1, "transparent");
+                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(x, y, 70, 0, Math.PI * 2); ctx.fill();
+            },
+            (x, y) => { // 10. Vortex
+                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.beginPath();
+                for (let i = 0; i < 10; i++) ctx.arc(x, y, i * 8, (Date.now() / 100), (Date.now() / 100) + 2);
+                ctx.stroke();
+            }
+        ];
+
+        function runEffectLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (activeCard) effects[currentEffectId](mousePos.x, mousePos.y);
+            requestAnimationFrame(runEffectLoop);
+        }
+        runEffectLoop();
+
+        function initBackgroundAnim() {
+            const container = document.getElementById('bg-animation-container');
+            const icons = ['🪐', '🌟', '🛸', '🦁', '🍎', '🚀', '🌍', '🍓'];
+            setInterval(() => {
+                const count = Math.floor(Math.random() * 2) + 2;
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => {
+                        const obj = document.createElement('div'); obj.className = 'bg-object';
+                        obj.textContent = icons[Math.floor(Math.random() * icons.length)];
+                        obj.style.left = Math.random() * window.innerWidth + 'px';
+                        obj.style.top = Math.random() * window.innerHeight + 'px';
+                        obj.style.setProperty('--move-x', (Math.random() - 0.5) * 600 + 'px');
+                        obj.style.setProperty('--move-y', (Math.random() - 0.5) * 600 + 'px');
+                        container.appendChild(obj); setTimeout(() => obj.remove(), 20000);
+                    }, i * 500);
+                }
+            }, 5000);
+        }
+
+        const sfx = {
+            drag: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
+            pop: new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'),
+            win: new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3')
+        };
+
+        function speakLetter(letter, index, isDragging = false) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(letter);
+            u.lang = 'en-US';
+
+            // Nếu allVoices chưa kịp nạp, ta bắt nó nạp lại ngay lập tức
+            if (allVoices.length === 0) {
+                allVoices = window.speechSynthesis.getVoices().filter(v => v.lang.includes('en'));
+            }
+
+            if (allVoices.length > 0) {
+                u.voice = allVoices[index % allVoices.length];
+            }
+
+            if (isDragging) {
+                u.rate = 1.7;
+                u.pitch = 1.1 + (Math.random() * 0.4);
+            } else {
+                u.rate = 0.8;
+                u.pitch = 1;
+            }
+            window.speechSynthesis.speak(u);
+        }
+
+        function startLoopingSpeech(letter, index) {
+            stopLoopingSpeech();
+            speakLetter(letter, index, true);
+            // Nhịp điệu kêu la dồn dập
+            speechInterval = setInterval(() => {
+                if (activeCard) speakLetter(letter, index, true);
+            }, 350);
+        }
+
+        function stopLoopingSpeech() {
+            clearInterval(speechInterval);
+        }
+
+        function speakWord(word) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.6;
+            window.speechSynthesis.speak(u);
+        }
+
+        function initGame() {
+            document.getElementById('victory-overlay').style.display = 'none';
+
+            // --- DÒNG QUAN TRỌNG NHẤT: Chọn ngẫu nhiên index từ 0 đến (số lượng từ - 1) ---
+            currentWordIndex = Math.floor(Math.random() * wordsData.length);
+
+            const data = wordsData[currentWordIndex];
+            const container = document.getElementById('word-container');
+            const pool = document.getElementById('letter-pool');
+
+            container.innerHTML = '';
+            pool.innerHTML = '';
+
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('replay-btn').style.display = 'none';
+            document.getElementById('word-meaning').textContent = `Nghĩa: ${data.meaning}`;
+
+            [...data.word].forEach(char => {
+                const slot = document.createElement('div');
+                slot.className = 'letter-slot';
+                slot.dataset.char = char;
+                slot.textContent = char;
+                container.appendChild(slot);
+            });
+
+            const shuffled = [...data.word].map((char, i) => ({ char, i })).sort(() => Math.random() - 0.5);
+            shuffled.forEach((item, i) => {
+                const card = document.createElement('div');
+                card.className = `letter-card c${(i % 5) + 1}`;
+                card.textContent = item.char;
+                card.dataset.voiceIndex = item.i;
+                card.addEventListener('pointerdown', onStart);
+                pool.appendChild(card);
+            });
+        }
+
+        function onStart(e) {
+            activeCard = e.currentTarget;
+            currentEffectId = Math.floor(Math.random() * effects.length);
+            const rect = activeCard.getBoundingClientRect();
+            offset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            mousePos = { x: e.clientX, y: e.clientY };
+            activeCard.classList.add('dragging');
+            startLoopingSpeech(activeCard.textContent, parseInt(activeCard.dataset.voiceIndex));
+            sfx.drag.play();
+            document.addEventListener('pointermove', onMove); document.addEventListener('pointerup', onEnd);
+        }
+
+        function onMove(e) {
+            if (!activeCard) return;
+
+            // Đây là linh hồn của Endless Alphabet: 
+            // Chữ cái sẽ rung lắc ngẫu nhiên 5px tạo cảm giác nó đang sống
+            let rx = (Math.random() - 0.5) * 12;
+            let ry = (Math.random() - 0.5) * 12;
+
+            activeCard.style.left = (e.clientX - offset.x + rx) + 'px';
+            activeCard.style.top = (e.clientY - offset.y + ry) + 'px';
+            mousePos = { x: e.clientX, y: e.clientY };
+        }
+
+        function onEnd(e) {
+            if (!activeCard) return;
+            stopLoopingSpeech();
+            const slots = document.querySelectorAll('.letter-slot');
+            let matched = false;
+            const vIdx = parseInt(activeCard.dataset.voiceIndex);
+
+            slots.forEach(slot => {
+                const rect = slot.getBoundingClientRect();
+                if (e.clientX > rect.left && e.clientX < rect.right && e.clientY > rect.top && e.clientY < rect.bottom) {
+                    if (slot.dataset.char === activeCard.textContent && !slot.classList.contains('filled')) {
+                        slot.innerHTML = ''; slot.appendChild(activeCard); slot.classList.add('filled');
+                        activeCard.classList.remove('dragging'); activeCard.classList.add('correct-pop');
+                        activeCard.style = ""; sfx.pop.play();
+                        speakLetter(activeCard.textContent, vIdx, false);
+                        matched = true; checkWin();
+                    }
+                }
+            });
+            if (!matched) { activeCard.classList.remove('dragging'); activeCard.style = ""; }
+            activeCard = null;
+            document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onEnd);
+        }
+
+        function checkWin() {
+            if (document.querySelectorAll('.letter-slot.filled').length === wordsData[currentWordIndex].word.length) {
+                const w = wordsData[currentWordIndex].word;
+                lastCompletedWord = w;
+
+                sfx.win.play();
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+
+                document.getElementById('victory-word').textContent = w;
+                document.getElementById('victory-overlay').style.display = 'flex';
+
+                setTimeout(() => speakWord(w), 500);
+
+                setTimeout(() => {
+                    document.getElementById('victory-overlay').style.display = 'none';
+                    document.getElementById('next-btn').style.display = 'block';
+                    document.getElementById('replay-btn').style.display = 'block';
+
+                    // ĐÃ XÓA DÒNG currentWordIndex = (currentWordIndex + 1)... 
+                    // Vì hàm initGame() khi được gọi sẽ tự bốc số ngẫu nhiên mới rồi.
+                }, 2500);
+            }
+        }
+
+        function repeatWord() { if (lastCompletedWord) speakWord(lastCompletedWord); }
+        initBackgroundAnim(); initGame();
+    </script>
+</body>
+
+</html>

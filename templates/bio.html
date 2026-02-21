@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Style riêng cho trang Bio để không ảnh hưởng trang chủ */
+    .bio-card {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 50px 40px;
+        border-radius: 30px;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(241, 196, 15, 0.2);
+        max-width: 600px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .bio-name {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 3rem;
+        color: var(--accent-gold);
+        text-transform: uppercase;
+        letter-spacing: -2px;
+        margin: 25px 0 15px 0;
+        line-height: 1;
+        text-shadow: 0 0 30px rgba(241, 196, 15, 0.3);
+    }
+
+    .bio-tagline {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem;
+        /* Hạ size xuống một chút (0.85 -> 0.7) cho chắc ăn */
+        font-weight: 400;
+        color: var(--accent-gold);
+        text-transform: uppercase;
+        letter-spacing: 6px;
+        /* Giảm nhẹ khoảng cách (8px -> 6px) để vừa cái khung */
+        text-indent: 6px;
+        /* Phải khớp với letter-spacing để cân giữa */
+
+        /* CÂU LỆNH QUAN TRỌNG NHẤT NẰM Ở ĐÂY */
+        white-space: nowrap;
+        /* ÉP CHỮ NẰM TRÊN 1 DÒNG, KHÔNG CHO XUỐNG HÀNG */
+
+        margin-bottom: 40px;
+        opacity: 0.7;
+        display: block;
+        text-align: center;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        text-align: left;
+        margin: 30px 0;
+    }
+
+    .info-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px 20px;
+        border-radius: 15px;
+        border-left: 3px solid var(--accent-gold);
+        transition: 0.3s;
+    }
+
+    .info-item:hover {
+        background: rgba(241, 196, 15, 0.1);
+        transform: translateX(10px);
+    }
+
+    .info-item b {
+        color: var(--accent-gold);
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .back-btn {
+        margin-top: 20px;
+        display: inline-block;
+        color: rgba(255, 255, 255, 0.5);
+        text-decoration: none;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        transition: 0.3s;
+    }
+
+    .back-btn:hover {
+        color: var(--accent-gold);
+        letter-spacing: 4px;
+    }
+</style>
+
+<div class="bio-card">
+    <div class="journey-text" style="letter-spacing: 5px; text-transform: uppercase; font-size: 0.75rem; opacity: 0.6;">
+        About Me</div>
+    <h1 class="bio-name">Du Gia Văn</h1>
+    <p class="bio-tagline">Decoding the universe in 2026</p>
+
+    <div class="info-grid">
+        <a href="/english" style="text-decoration: none; color: inherit;">
+            <div class="info-item">
+                <b>English Learning</b>
+                <span>Sharing knowledge & inspiring English learners.</span>
+            </div>
+        </a>
+
+        <div class="info-item">
+            <b>Coding</b>
+            <span>Building modern web apps with Python & Flask</span>
+        </div>
+
+        <div class="info-item">
+            <b>Tool</b>
+            <span>Developing automation tools for a better workflow.</span>
+        </div>
+    </div>
+
+    <a href="/" class="back-btn">← Quay lại hành trình</a>
+</div>
+
+{% endblock %} ```

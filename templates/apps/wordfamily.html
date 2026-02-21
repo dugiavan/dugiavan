@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Word Family</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Comfortaa:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --accent-gold: #f1c40f;
+            --soft-white: #ecf0f1;
+            --btn-glass: rgba(255, 255, 255, 0.15);
+            --panel-glass: rgba(255, 255, 255, 0.08);
+            --tab-active: rgba(241, 196, 15, 0.3);
+            --text-muted: #bdc3c7;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            /* Giúp app phản hồi nhanh hơn, không bị delay khi bấm */
+        }
+
+        body {
+            font-family: 'Comfortaa', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            /* Tối ưu padding cho điện thoại */
+            padding-top: env(safe-area-inset-top, 20px);
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            padding-left: env(safe-area-inset-left, 10px);
+            padding-right: env(safe-area-inset-right, 10px);
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            color: white;
+            background-color: #000;
+            /* Giúp cuộn mượt hơn trên mobile */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            transition: opacity 4s ease-in-out;
+            background-size: cover;
+            /* Đảm bảo hình nền bao phủ hết cả các phần bo cong của màn hình */
+            background-position: center;
+        }
+
+        #bg-primary {
+            opacity: 1;
+        }
+
+        #bg-secondary {
+            opacity: 0;
+        }
+
+        #stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--d) linear infinite;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 0.2;
+            }
+
+            50% {
+                transform: translateY(-10px) scale(1.3);
+                opacity: 0.6;
+            }
+        }
+
+        .header-minimal {
+            text-align: center;
+            padding: 15px;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .voice-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #voice-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            backdrop-filter: blur(8px);
+            width: 180px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .author-tag {
+            font-size: 0.5rem;
+            opacity: 0.7;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .signature {
+            font-size: 0.55rem;
+            opacity: 0.5;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #bdc3c7;
+        }
+
+        .content-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            width: 95%;
+            max-width: 1000px;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .number-display {
+            font-family: 'Montserrat', sans-serif;
+            font-size: clamp(24px, 8vw, 56px);
+            font-weight: 900;
+            line-height: 1.2;
+            color: white;
+            text-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            margin: 0;
+            user-select: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .label-en {
+            font-size: clamp(0.8rem, 2vw, 1.1rem);
+            font-weight: 700;
+            color: var(--accent-gold);
+            margin-top: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .label-vi {
+            font-size: clamp(0.7rem, 1.6vw, 0.85rem);
+            opacity: 0.9;
+            margin-top: 8px;
+            color: var(--soft-white);
+            max-width: 700px;
+            line-height: 1.5;
+        }
+
+        .info-grid {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 950px;
+            margin-top: 20px;
+            display: none;
+            animation: slideUp 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-box {
+            flex: 1;
+            padding: 20px;
+            background: var(--panel-glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            text-align: left;
+            height: 380px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .box-title {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-gold);
+            margin-bottom: 12px;
+            font-weight: 700;
+            display: block;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 700;
+        }
+
+        .tab-btn.active {
+            background: var(--tab-active);
+            border-color: var(--accent-gold);
+            color: white;
+        }
+
+        .box-content {
+            font-size: 0.75rem;
+            line-height: 1.7;
+            color: #fff;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .word-item {
+            margin-bottom: 10px;
+            padding-left: 10px;
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 0.4s ease;
+        }
+
+        .word-en {
+            color: var(--accent-gold);
+            font-weight: 700;
+            display: block;
+        }
+
+        .word-vi {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .example-item {
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 2px solid var(--accent-gold);
+            animation: fadeIn 0.4s ease;
+        }
+
+        .no-data {
+            color: rgba(255, 255, 255, 0.3);
+            font-style: italic;
+            font-size: 0.65rem;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+            margin-bottom: 30px;
+            /* Thêm dòng này để nút không bị dính đáy màn hình */
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: var(--btn-glass);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 14px 30px;
+            border-radius: 50px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .progress-indicator {
+            font-size: 0.6rem;
+            margin-top: 10px;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 768px) {
+            .content-container {
+                padding: 5px;
+                /* Giảm padding ngoài để tăng không gian cho nội dung */
+            }
+
+            .info-grid {
+                flex-direction: column;
+                gap: 20px;
+                /* Tăng khoảng cách giữa 2 hộp nội dung */
+                max-height: 55vh;
+                /* Giảm nhẹ chiều cao để lộ nút điều hướng rõ hơn */
+                overflow-y: auto;
+                padding: 5px;
+            }
+
+            .info-box {
+                height: auto;
+                /* Cho phép hộp co giãn theo nội dung trên mobile */
+                min-height: 250px;
+                flex: none;
+                padding: 15px;
+                /* Padding trong hộp vừa phải */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg-primary" class="bg-layer"></div>
+    <div id="bg-secondary" class="bg-layer"></div>
+    <div id="stars-container"></div>
+
+    <div class="header-minimal">
+        <div class="voice-controls">
+            <select id="voice-select"></select>
+            <div class="author-tag">Coded & Designed by DuGiaVăn</div>
+            <div class="signature">Word Family</div>
+        </div>
+    </div>
+
+    <div class="content-container">
+        <div id="number" class="number-display">READY?</div>
+        <div id="text-en" class="label-en">Bạn đã sẵn sàng học chưa?</div>
+        <div id="text-vi" class="label-vi">Word Family.
+        </div>
+
+        <div id="info-grid" class="info-grid">
+            <div class="info-box">
+                <span class="box-title">CẤU TRÚC TỪ VỰNG</span>
+                <div class="tabs-header">
+                    <button class="tab-btn active" onclick="handleTabClick('V')">V</button>
+                    <button class="tab-btn" onclick="handleTabClick('N')">N</button>
+                    <button class="tab-btn" onclick="handleTabClick('Adj')">Adj</button>
+                    <button class="tab-btn" onclick="handleTabClick('Adv')">Adv</button>
+                </div>
+                <div id="tab-content" class="box-content"></div>
+            </div>
+            <div class="info-box">
+                <span class="box-title">VÍ DỤ THEO TỪ LOẠI</span>
+                <div id="ex-content" class="box-content"></div>
+            </div>
+        </div>
+
+        <div class="nav-controls">
+            <button class="nav-btn" onclick="changeWord(-1)">← Trở lại</button>
+            <button class="nav-btn" onclick="changeWord(1)">Tiếp theo →</button>
+        </div>
+        <div id="progress" class="progress-indicator"></div>
+    </div>
+
+    <script>
+        const vocabData = [
+            {
+                word: "ABLE",
+                hint: "Năng lực / Khả năng",
+                diff: "Gốc từ phổ biến nhất để chỉ khả năng thực hiện hành động.",
+                family: {
+                    V: {
+                        words: [
+                            { en: "Enable (v)", vi: "Cho phép / Làm cho có thể" },
+                            { en: "Disable (v)", vi: "Vô hiệu hóa / Làm cho không thể" }
+                        ],
+                        examples: [
+                            "The new law will enable more people to vote.",
+                            "You can disable notifications in the settings menu."
+                        ]
+                    },
+                    N: {
+                        words: [
+                            { en: "Ability (n)", vi: "Năng lực / Khả năng làm gì" },
+                            { en: "Inability (n)", vi: "Sự bất lực / Không có khả năng" },
+                            { en: "Capability (n)", vi: "Năng lực chuyên môn / Giới hạn khả năng" },
+                            { en: "Disability (n)", vi: "Sự tàn tật / Khiếm khuyết" }
+                        ],
+                        examples: [
+                            "Success is the ability to go from failure to failure.",
+                            "He showed great capability in managing the project.",
+                            "The building has special access for people with disabilities."
+                        ]
+                    },
+                    Adj: {
+                        words: [
+                            { en: "Able (adj)", vi: "Có thể / Có đủ năng lực" },
+                            { en: "Unable (adj)", vi: "Không thể làm gì" },
+                            { en: "Capable (adj)", vi: "Có bản lĩnh / Có khả năng (+ of)" },
+                            { en: "Disabled (adj)", vi: "Bị khuyết tật / Hỏng hóc" }
+                        ],
+                        examples: [
+                            "She is a very able lawyer.",
+                            "I am sorry, I am unable to help you at this moment.",
+                            "You are capable of much more than you think."
+                        ]
+                    },
+                    Adv: {
+                        words: [
+                            { en: "Ably (adv)", vi: "Một cách khéo léo / Có năng lực" },
+                            { en: "Capably (adv)", vi: "Một cách bản lĩnh / Thành thạo" }
+                        ],
+                        examples: [
+                            "The meeting was ably chaired by the youngest member.",
+                            "She handled the difficult situation very capably."
+                        ]
+                    }
+                }
+            },
+            {
+                word: "ACCEPT",
+                hint: "Chấp nhận",
+                diff: "Thể hiện sự đồng ý, thu nhận hoặc công nhận điều gì đó.",
+                family: {
+                    V: {
+                        words: [
+                            { en: "Accept (v)", vi: "Chấp nhận / Nhận lời" }
+                        ],
+                        examples: [
+                            "Please accept this small gift as a token of our thanks.",
+                            "He was accepted into the university of his choice."
+                        ]
+                    },
+                    N: {
+                        words: [
+                            { en: "Acceptance (n)", vi: "Sự chấp nhận / Sự đón nhận" },
+                            { en: "Acceptability (n)", vi: "Tính chấp nhận được / Sự phù hợp" }
+                        ],
+                        examples: [
+                            "The proposal found wide acceptance among the staff.",
+                            "The acceptability of the new drug is still being tested."
+                        ]
+                    },
+                    Adj: {
+                        words: [
+                            { en: "Acceptable (adj)", vi: "Có thể chấp nhận được / Thỏa đáng" },
+                            { en: "Unacceptable (adj)", vi: "Không thể chấp nhận được" },
+                            { en: "Accepted (adj)", vi: "Được thừa nhận / Đã được chấp thuận" }
+                        ],
+                        examples: [
+                            "We need to find a solution that is acceptable to both sides.",
+                            "His rude behavior was completely unacceptable.",
+                            "It is a generally accepted fact that the earth is round."
+                        ]
+                    },
+                    Adv: {
+                        words: [
+                            { en: "Acceptably (adv)", vi: "Một cách chấp nhận được / Vừa ý" },
+                            { en: "Unacceptably (adv)", vi: "Một cách không thể chấp nhận được" }
+                        ],
+                        examples: [
+                            "The candidate performed acceptably during the interview.",
+                            "The noise levels in the factory were unacceptably high."
+                        ]
+                    }
+                }
+            },
+            {
+                word: "ACCOMMODATE", hint: "Chỗ ở / Đáp ứng", diff: "Quan trọng trong đời sống (du lịch) và TOEIC.",
+                family: {
+                    V: { words: [{ en: "Accommodate", vi: "cung cấp chỗ ở/đáp ứng" }], examples: ["The hotel can accommodate up to 500 guests.", "We try to accommodate all special requests."] },
+                    N: { words: [{ en: "Accommodation", vi: "chỗ ở/tiện nghi" }], examples: ["The price includes travel and accommodation."] },
+                    Adj: { words: [{ en: "Accommodating", vi: "tận tình/sẵn lòng giúp đỡ" }], examples: ["The hotel staff were very accommodating."] },
+                    Adv: { words: [{ en: "Accommodatingly", vi: "một cách tận tình" }], examples: ["He smiled accommodatingly and opened the door."] }
+                }
+            },
+            {
+                word: "ACHIEVE", hint: "Đạt được", diff: "Sự thành công thông qua nỗ lực cá nhân.",
+                family: {
+                    V: { words: [{ en: "Achieve", vi: "đạt được/giành được" }], examples: ["She finally achieved her goal."] },
+                    N: { words: [{ en: "Achievement", vi: "thành tựu/thành tích" }], examples: ["Passing the exam was a great achievement."] },
+                    Adj: { words: [{ en: "Achievable", vi: "có thể đạt được" }], examples: ["Set achievable targets for yourself."] },
+                    Adv: { words: [], examples: ["(Thường dùng cụm 'In an achievable manner')"] }
+                }
+            },
+            {
+                word: "ACT", hint: "Hành động / Diễn xuất", diff: "Từ vựng cốt lõi mô tả mọi hoạt động.",
+                family: {
+                    V: { words: [{ en: "Act", vi: "hành động/diễn" }, { en: "React", vi: "phản ứng lại" }], examples: ["Think before you act.", "How did he react to the news?"] },
+                    N: { words: [{ en: "Action", vi: "hành động" }, { en: "Activity", vi: "hoạt động" }, { en: "Reaction", vi: "sự phản ứng" }], examples: ["Action speaks louder than words.", "What is your reaction to this plan?"] },
+                    Adj: { words: [{ en: "Active", vi: "năng động/có hiệu lực" }, { en: "Actual", vi: "thực tế/thật sự" }], examples: ["She is an active member of the club.", "The actual cost was higher than expected."] },
+                    Adv: { words: [{ en: "Actively", vi: "một cách tích cực" }, { en: "Actually", vi: "thực tế là/thật ra" }], examples: ["He is actively looking for a job.", "Actually, I don't like coffee."] }
+                }
+            },
+            {
+                word: "ADAPT", hint: "Thích nghi", diff: "Khả năng thay đổi linh hoạt theo hoàn cảnh.",
+                family: {
+                    V: { words: [{ en: "Adapt", vi: "thích nghi/phỏng theo" }], examples: ["It takes time to adapt to a new country.", "The play was adapted from a novel."] },
+                    N: { words: [{ en: "Adaptation", vi: "sự thích nghi/tác phẩm chuyển thể" }, { en: "Adaptability", vi: "khả năng thích nghi" }], examples: ["Adaptation to climate change is vital.", "He has great adaptability in high-stress jobs."] },
+                    Adj: { words: [{ en: "Adaptable", vi: "có thể thích nghi/linh hoạt" }], examples: ["We need adaptable workers who can learn fast."] },
+                    Adv: { words: [{ en: "Adaptively", vi: "một cách thích nghi" }], examples: ["The system responds adaptively to user input."] }
+                }
+            },
+            {
+                word: "ADD", hint: "Thêm vào", diff: "Phép toán và sự gia tăng số lượng.",
+                family: {
+                    V: { words: [{ en: "Add", vi: "thêm vào/cộng vào" }], examples: ["Add some sugar to the tea."] },
+                    N: { words: [{ en: "Addition", vi: "phép cộng/sự thêm vào" }], examples: ["In addition to his salary, he gets a bonus."] },
+                    Adj: { words: [{ en: "Additional", vi: "bổ sung/thêm vào" }, { en: "Additive", vi: "có tính cộng dồn" }], examples: ["There will be an additional charge for delivery.", "Food additives are used for flavor."] },
+                    Adv: { words: [{ en: "Additionally", vi: "thêm vào đó/ngoài ra" }], examples: ["Additionally, we offer a free trial period."] }
+                }
+            },
+            {
+                word: "ADDICT", hint: "Nghiện", diff: "Sự phụ thuộc vào thói quen hoặc chất gây nghiện.",
+                family: {
+                    V: { words: [{ en: "Addict", vi: "làm cho nghiện" }], examples: ["Smartphone games are designed to addict players."] },
+                    N: { words: [{ en: "Addiction", vi: "sự nghiện" }, { en: "Addict", vi: "người nghiện" }], examples: ["He is struggling with drug addiction.", "A coffee addict."] },
+                    Adj: { words: [{ en: "Addictive", vi: "gây nghiện (vật)" }, { en: "Addicted", vi: "bị nghiện (người)" }], examples: ["Heroin is highly addictive.", "She is addicted to social media."] },
+                    Adv: { words: [{ en: "Addictively", vi: "một cách gây nghiện" }], examples: ["The TV series is addictively entertaining."] }
+                }
+            },
+            {
+                word: "ADJUST", hint: "Điều chỉnh", diff: "Sự thay đổi nhỏ để đạt được sự chính xác.",
+                family: {
+                    V: { words: [{ en: "Adjust", vi: "điều chỉnh/thích nghi" }], examples: ["Adjust the volume, please.", "I'm still adjusting to life in the city."] },
+                    N: { words: [{ en: "Adjustment", vi: "sự điều chỉnh" }], examples: ["I made a slight adjustment to the schedule."] },
+                    Adj: { words: [{ en: "Adjustable", vi: "có thể điều chỉnh" }], examples: ["The height of the chair is adjustable."] },
+                    Adv: { words: [{ en: "Adjustably", vi: "có thể điều chỉnh được" }], examples: ["The shelves were adjustably mounted."] }
+                }
+            },
+            {
+                word: "ADMIRE",
+                hint: "Ngưỡng mộ",
+                diff: "Cảm giác tôn trọng và phê duyệt sâu sắc đối với ai đó/việc gì đó.",
+                family: {
+                    V: {
+                        words: [
+                            { en: "Admire (v)", vi: "Ngưỡng mộ / Khâm phục" }
+                        ],
+                        examples: [
+                            "I really admire the way you handled that difficult situation.",
+                            "We paused to admire the beautiful view from the top."
+                        ]
+                    },
+                    N: {
+                        words: [
+                            { en: "Admiration (n)", vi: "Sự ngưỡng mộ / Sự khâm phục" },
+                            { en: "Admirer (n)", vi: "Người hâm mộ / Người tán tỉnh" }
+                        ],
+                        examples: [
+                            "Her dedication to the project earned her the admiration of her peers.",
+                            "She has a secret admirer who sends her flowers every week."
+                        ]
+                    },
+                    Adj: {
+                        words: [
+                            { en: "Admirable (adj)", vi: "Đáng ngưỡng mộ / Tuyệt vời" },
+                            { en: "Admiring (adj)", vi: "Ngưỡng mộ (thái độ/ánh nhìn)" }
+                        ],
+                        examples: [
+                            "The team made an admirable effort even though they lost the game.",
+                            "The gallery was full of admiring visitors."
+                        ]
+                    },
+                    Adv: {
+                        words: [
+                            { en: "Admirably (adv)", vi: "Một cách đáng khâm phục / Tuyệt vời" }
+                        ],
+                        examples: [
+                            "The system worked admirably despite the heavy traffic.",
+                            "She has coped admirably with her recent family problems."
+                        ]
+                    }
+                }
+            },
+            {
+                word: "ADMIT", hint: "Thừa nhận", diff: "Chấp nhận sự thật hoặc cho phép đi vào.",
+                family: {
+                    V: { words: [{ en: "Admit", vi: "thừa nhận/cho vào" }], examples: ["He admitted his mistake.", "Each ticket admits two people."] },
+                    N: { words: [{ en: "Admission", vi: "sự thừa nhận/phí vào cửa" }, { en: "Admittance", vi: "sự cho phép vào (thường là nơi riêng tư)" }], examples: ["Admission is free for children.", "No admittance without a badge."] },
+                    Adj: { words: [{ en: "Admissible", vi: "có thể chấp nhận (pháp lý)" }], examples: ["Is this evidence admissible in court?"] },
+                    Adv: { words: [{ en: "Admittedly", vi: "phải thừa nhận là" }], examples: ["Admittedly, it's a difficult problem."] }
+                }
+            },
+            {
+                word: "ADVISE", hint: "Lời khuyên", diff: "Cung cấp hướng dẫn hoặc ý kiến chuyên môn.",
+                family: {
+                    V: { words: [{ en: "Advise", vi: "khuyên bảo/thông báo" }], examples: ["I advise you to stay home.", "Please advise us of any changes."] },
+                    N: { words: [{ en: "Advice", vi: "lời khuyên (không đếm được)" }, { en: "Adviser", vi: "cố vấn" }], examples: ["Let me give you some advice.", "A financial adviser."] },
+                    Adj: { words: [{ en: "Advisable", vi: "nên làm/thích hợp" }, { en: "Advisory", vi: "đóng vai trò cố vấn/cảnh báo" }], examples: ["It is advisable to book in advance.", "An advisory committee."] },
+                    Adv: { words: [{ en: "Advisedly", vi: "thận trọng/có cân nhắc" }], examples: ["I used that word very advisedly."] }
+                }
+            },
+            {
+                word: "AGREE", hint: "Đồng ý", diff: "Sự nhất trí về quan điểm hoặc hợp đồng.",
+                family: {
+                    V: { words: [{ en: "Agree", vi: "đồng ý" }, { en: "Disagree", vi: "phản đối/không thống nhất" }], examples: ["I agree with your opinion.", "We disagree on many things."] },
+                    N: { words: [{ en: "Agreement", vi: "sự đồng ý/hợp đồng" }, { en: "Disagreement", vi: "sự bất đồng" }], examples: ["They reached a final agreement.", "There is some disagreement about the facts."] },
+                    Adj: { words: [{ en: "Agreeable", vi: "dễ chịu/có thể đồng ý" }], examples: ["An agreeable person to work with."] },
+                    Adv: { words: [{ en: "Agreeably", vi: "một cách dễ chịu" }], examples: ["We were agreeably surprised by the result."] }
+                }
+            },
+            {
+                word: "ALTER", hint: "Thay đổi", diff: "Thay đổi về diện mạo, kích thước hoặc tính chất.",
+                family: {
+                    V: { words: [{ en: "Alter", vi: "thay đổi/sửa chữa (quần áo)" }], examples: ["The landscape has altered significantly.", "I need to alter this dress."] },
+                    N: { words: [{ en: "Alteration", vi: "sự thay đổi/sửa đổi" }], examples: ["We made some alterations to the house."] },
+                    Adj: { words: [{ en: "Alterable", vi: "có thể thay đổi" }, { en: "Unalterable", vi: "không thể thay đổi" }], examples: ["Is the contract alterable?", "An unalterable fact."] },
+                    Adv: { words: [{ en: "Unalterably", vi: "một cách không thể thay đổi" }], examples: ["Her life was unalterably changed."] }
+                }
+            },
+            {
+                word: "AMAZE", hint: "Kinh ngạc", diff: "Sự ngạc nhiên cực độ hoặc thán phục.",
+                family: {
+                    V: { words: [{ en: "Amaze", vi: "làm kinh ngạc" }], examples: ["The magic trick amazed the children."] },
+                    N: { words: [{ en: "Amazement", vi: "sự kinh ngạc" }], examples: ["She stared at him in amazement."] },
+                    Adj: { words: [{ en: "Amazing", vi: "kinh ngạc (vật)" }, { en: "Amazed", vi: "bị kinh ngạc (người)" }], examples: ["That's an amazing story!", "I was amazed by the view."] },
+                    Adv: { words: [{ en: "Amazingly", vi: "một cách kinh ngạc" }], examples: ["Amazingly, no one was hurt."] }
+                }
+            },
+            {
+                word: "AMUSE", hint: "Giải trí", diff: "Làm cho ai đó thấy vui vẻ hoặc buồn cười.",
+                family: {
+                    V: { words: [{ en: "Amuse", vi: "làm cho vui/giải trí" }], examples: ["He amused us with his jokes."] },
+                    N: { words: [{ en: "Amusement", vi: "sự giải trí/niềm vui" }], examples: ["We watched the kittens with amusement.", "An amusement park."] },
+                    Adj: { words: [{ en: "Amusing", vi: "vui vẻ/buồn cười" }, { en: "Amused", vi: "thấy vui" }], examples: ["An amusing anecdote.", "She looked amused by his comments."] },
+                    Adv: { words: [{ en: "Amusingly", vi: "một cách hài hước" }], examples: ["The story was amusingly told."] }
+                }
+            },
+            {
+                word: "ANALYZE", hint: "Phân tích", diff: "Nghiên cứu chi tiết để hiểu bản chất.",
+                family: {
+                    V: { words: [{ en: "Analyze", vi: "phân tích" }], examples: ["The scientists analyzed the samples."] },
+                    N: { words: [{ en: "Analysis", vi: "sự/bản phân tích (số ít)" }, { en: "Analyses", vi: "các bản phân tích (số nhiều)" }, { en: "Analyst", vi: "nhà phân tích" }], examples: ["A detailed analysis of the data.", "A financial analyst."] },
+                    Adj: { words: [{ en: "Analytical", vi: "thuộc về phân tích" }], examples: ["She has a very analytical mind."] },
+                    Adv: { words: [{ en: "Analytically", vi: "về mặt phân tích" }], examples: ["We need to look at this analytically."] }
+                }
+            },
+            {
+                word: "ANNOUNCE", hint: "Thông báo", diff: "Công bố thông tin chính thức cho mọi người.",
+                family: {
+                    V: { words: [{ en: "Announce", vi: "thông báo/tuyên bố" }], examples: ["The winner will be announced tomorrow."] },
+                    N: { words: [{ en: "Announcement", vi: "sự thông báo/bản tin" }, { en: "Announcer", vi: "người đọc thông báo (phát thanh viên)" }], examples: ["I have an important announcement to make."] },
+                    Adj: { words: [{ en: "Announced", vi: "đã được thông báo" }], examples: ["The announced plan was cancelled."] },
+                    Adv: { words: [], examples: ["(Trạng từ 'Announcingly' cực kỳ hiếm)"] }
+                }
+            },
+            {
+                word: "ANXIETY", hint: "Lo lắng", diff: "Cảm giác bồn chồn, lo âu về tương lai.",
+                family: {
+                    V: { words: [], examples: ["(Thường dùng cấu trúc 'Anxiolytics' - thuốc chống lo âu)"] },
+                    N: { words: [{ en: "Anxiety", vi: "sự lo lắng/nỗi lo" }], examples: ["He suffers from social anxiety."] },
+                    Adj: { words: [{ en: "Anxious", vi: "lo lắng/hồi hộp/nóng lòng" }], examples: ["I'm anxious about the exam.", "We are anxious to start."] },
+                    Adv: { words: [{ en: "Anxiously", vi: "một cách lo lắng" }], examples: ["They waited anxiously for news."] }
+                }
+            },
+            {
+                word: "APOLOGY", hint: "Lời xin lỗi", diff: "Thừa nhận sai lầm và bày tỏ sự hối hận.",
+                family: {
+                    V: { words: [{ en: "Apologize", vi: "xin lỗi" }], examples: ["You should apologize for your behavior."] },
+                    N: { words: [{ en: "Apology", vi: "lời xin lỗi" }], examples: ["Please accept my sincere apology."] },
+                    Adj: { words: [{ en: "Apologetic", vi: "biết lỗi/xin lỗi" }], examples: ["He was very apologetic about the delay."] },
+                    Adv: { words: [{ en: "Apologetically", vi: "một cách hối lỗi" }], examples: ["'I'm late,' he said apologetically."] }
+                }
+            },
+            {
+                word: "APPEAR", hint: "Xuất hiện", diff: "Bắt đầu được nhìn thấy hoặc có vẻ như.",
+                family: {
+                    V: { words: [{ en: "Appear", vi: "xuất hiện/có vẻ như" }, { en: "Disappear", vi: "biến mất" }], examples: ["A cat appeared at the door.", "He appears to be tired."] },
+                    N: { words: [{ en: "Appearance", vi: "diện mạo/sự xuất hiện" }, { en: "Disappearance", vi: "sự biến mất" }], examples: ["Don't judge by appearances.", "The mysterious disappearance of the ship."] },
+                    Adj: { words: [{ en: "Apparent", vi: "rõ ràng/hiển nhiên" }], examples: ["For no apparent reason, the engine stopped."] },
+                    Adv: { words: [{ en: "Apparently", vi: "hình như/rõ ràng là" }], examples: ["Apparently, they are getting married."] }
+                }
+            },
+            {
+                word: "APPLY", hint: "Áp dụng", diff: "Dùng cái gì đó cho mục đích cụ thể hoặc nộp đơn.",
+                family: {
+                    V: { words: [{ en: "Apply", vi: "áp dụng/nộp đơn/thoa (kem)" }], examples: ["Apply the cream twice a day.", "I applied for a scholarship."] },
+                    N: { words: [{ en: "Application", vi: "đơn xin/sự ứng dụng/ứng dụng (app)" }, { en: "Applicant", vi: "người nộp đơn" }], examples: ["A mobile application.", "There were over 100 applicants for the job."] },
+                    Adj: { words: [{ en: "Applicable", vi: "có thể áp dụng/thích hợp" }, { en: "Applied", vi: "được ứng dụng (khoa học)" }], examples: ["The rules are not applicable here.", "Applied mathematics."] },
+                    Adv: { words: [{ en: "Applicably", vi: "một cách thích hợp" }], examples: ["Skills that can be applicably used in any job."] }
+                }
+            },
+            {
+                word: "ARGUE", hint: "Tranh luận", diff: "Đưa ra lý lẽ hoặc cãi nhau về một vấn đề.",
+                family: {
+                    V: { words: [{ en: "Argue", vi: "tranh luận/cãi vã" }], examples: ["Stop arguing about money!", "He argued that the law was unfair."] },
+                    N: { words: [{ en: "Argument", vi: "sự tranh luận/lý lẽ" }], examples: ["They had a heated argument."] },
+                    Adj: { words: [{ en: "Argumentative", vi: "hay tranh cãi/thích lý sự" }], examples: ["He becomes argumentative when he's tired."] },
+                    Adv: { words: [{ en: "Arguably", vi: "có thể cho rằng/đáng tranh cãi là" }], examples: ["It is arguably the best movie of the year."] }
+                }
+            },
+            {
+                word: "ATTEND", hint: "Tham dự", diff: "Sự hiện diện tại một nơi hoặc chú ý lắng nghe.",
+                family: {
+                    V: { words: [{ en: "Attend", vi: "tham dự/chú ý/phục vụ" }], examples: ["Which school do you attend?", "Please attend to what I'm saying."] },
+                    N: { words: [{ en: "Attendance", vi: "sự tham dự/số người dự" }, { en: "Attention", vi: "sự chú ý" }, { en: "Attendant", vi: "người phục vụ" }], examples: ["Attendance at the meeting was low.", "Pay attention to the teacher.", "A flight attendant."] },
+                    Adj: { words: [{ en: "Attentive", vi: "chăm chú/ân cần" }], examples: ["An attentive audience.", "The waiter was very attentive."] },
+                    Adv: { words: [{ en: "Attentively", vi: "một cách chăm chú" }], examples: ["They listened attentively to the music."] }
+                }
+            },
+            {
+                word: "ATTRACT", hint: "Thu hút", diff: "Lôi cuốn sự chú ý hoặc quan tâm.",
+                family: {
+                    V: { words: [{ en: "Attract", vi: "thu hút/lôi cuốn" }], examples: ["The magnet attracts iron.", "The show attracted a large crowd."] },
+                    N: { words: [{ en: "Attraction", vi: "sức hút/điểm tham quan" }], examples: ["The main attraction of the city."] },
+                    Adj: { words: [{ en: "Attractive", vi: "hấp dẫn/lôi cuốn" }], examples: ["An attractive job offer.", "He has an attractive personality."] },
+                    Adv: { words: [{ en: "Attractively", vi: "một cách hấp dẫn" }], examples: ["The food was attractively presented."] }
+                }
+            },
+            {
+                word: "AVOID", hint: "Tránh né", diff: "Ngăn chặn điều gì đó xảy ra hoặc tránh xa ai đó.",
+                family: {
+                    V: { words: [{ en: "Avoid", vi: "tránh né/ngừa" }], examples: ["Avoid drinking and driving.", "She avoided me all day."] },
+                    N: { words: [{ en: "Avoidance", vi: "sự tránh né" }], examples: ["The avoidance of conflict is not always good."] },
+                    Adj: { words: [{ en: "Avoidable", vi: "có thể tránh được" }, { en: "Unavoidable", vi: "không thể tránh khỏi" }], examples: ["Many accidents are avoidable.", "An unavoidable delay."] },
+                    Adv: { words: [{ en: "Unavoidably", vi: "một cách không thể tránh khỏi" }], examples: ["The flight was unavoidably delayed."] }
+                }
+            },
+            {
+                word: "AWAKE",
+                hint: "Tỉnh giấc / Thức tỉnh",
+                diff: "Mô tả hành động rời bỏ giấc ngủ hoặc sự nhận thức rõ ràng về một vấn đề.",
+                family: {
+                    V: {
+                        words: [
+                            { en: "Awake (v)", vi: "Thức dậy / Đánh thức" },
+                            { en: "Awaken (v)", vi: "Gợi dậy (cảm xúc) / Thức tỉnh (nghĩa bóng)" },
+                            { en: "Wake (v)", vi: "Tỉnh giấc (phổ biến nhất)" }
+                        ],
+                        examples: [
+                            "I was awoken by a loud noise at midnight.",
+                            "The scandal awakened the public to the need for reform."
+                        ]
+                    },
+                    N: {
+                        words: [
+                            { en: "Awakening (n)", vi: "Sự thức tỉnh / Sự nhận ra" },
+                            { en: "Wakefulness (n)", vi: "Tình trạng thao thức / Sự không ngủ được" }
+                        ],
+                        examples: [
+                            "The 1960s saw a huge spiritual awakening.",
+                            "He had a rude awakening when he saw his bank balance."
+                        ]
+                    },
+                    Adj: {
+                        words: [
+                            { en: "Awake (adj)", vi: "Đang thức (không ngủ)" },
+                            { en: "Wide awake (adj)", vi: "Hoàn toàn tỉnh táo / Tỉnh như sáo" },
+                            { en: "Awakened (adj)", vi: "Đã thức tỉnh (tâm trí/nhận thức)" }
+                        ],
+                        examples: [
+                            "I lay awake for hours worrying about the exam.",
+                            "The baby is wide awake and wants to play."
+                        ]
+                    },
+                    Adv: {
+                        words: [],
+                        examples: [
+                            "(Không có dạng Adv trực tiếp, thường dùng 'While awake' hoặc 'Consciously')"
+                        ]
+                    }
+                }
+            },
+            {
+                word: "AWARE",
+                hint: "Nhận thức / Biết rõ",
+                diff: "Mô tả việc có kiến thức hoặc nhận biết được sự việc đang diễn ra.",
+                family: {
+                    V: {
+                        words: [],
+                        examples: [
+                            "(Không có dạng động từ trực tiếp, thường dùng 'Raise awareness' - Nâng cao nhận thức hoặc 'Be aware of' - Nhận biết)."
+                        ]
+                    },
+                    N: {
+                        words: [
+                            { en: "Awareness (n)", vi: "Sự nhận thức / Hiểu biết" },
+                            { en: "Unawareness (n)", vi: "Sự không nhận thức được / Sự vô ý" }
+                        ],
+                        examples: [
+                            "The campaign aims to raise public awareness of the disease.",
+                            "His complete unawareness of the problem was surprising."
+                        ]
+                    },
+                    Adj: {
+                        words: [
+                            { en: "Aware (adj)", vi: "Nhận thức được / Biết về (+ of)" },
+                            { en: "Unaware (adj)", vi: "Không biết / Không nhận thức được" },
+                            { en: "Self-aware (adj)", vi: "Tự nhận thức về bản thân" }
+                        ],
+                        examples: [
+                            "Most people are aware of the importance of a healthy diet.",
+                            "He was totally unaware that the police were watching him.",
+                            "To be successful, you need to be self-aware of your weaknesses."
+                        ]
+                    },
+                    Adv: {
+                        words: [
+                            { en: "Awarely (adv)", vi: "Một cách có nhận thức (ít dùng)" }
+                        ],
+                        examples: [
+                            "(Trạng từ này hiếm gặp, người ta thường dùng cụm 'Consciously' hoặc 'Knowingly' để thay thế)."
+                        ]
+                    }
+                }
+            },
+            {
+                word: "APPRECIATE",
+                hint: "Trân trọng / Tăng giá trị",
+                diff: "Cảm kích ai đó hoặc sự gia tăng giá trị của tài sản (bất động sản, chứng khoán).",
+                family: {
+                    V: { words: [{ en: "Appreciate", vi: "trân trọng/cảm kích/tăng giá trị" }, { en: "Depreciate", vi: "giảm giá trị" }], examples: ["I really appreciate your help.", "His property has appreciated over the years."] },
+                    N: { words: [{ en: "Appreciation", vi: "sự trân trọng/sự gia tăng giá trị" }], examples: ["Please accept this gift in appreciation of your hard work.", "The currency has shown a steady appreciation."] },
+                    Adj: { words: [{ en: "Appreciative", vi: "biết ơn/biết thưởng thức" }, { en: "Appreciable", vi: "đáng kể (có thể nhận ra)" }], examples: ["The audience was very appreciative.", "There is an appreciable difference between the two."] },
+                    Adv: { words: [{ en: "Appreciatively", vi: "một cách trân trọng" }], examples: ["She smiled appreciatively at his comment."] }
+                }
+            },
+            {
+                word: "ARRANGE",
+                hint: "Sắp xếp / Cải biên",
+                diff: "Lập kế hoạch, đặt vật theo thứ tự hoặc soạn lại nhạc (phối khí).",
+                family: {
+                    V: { words: [{ en: "Arrange", vi: "sắp xếp/thu xếp/cải biên nhạc" }, { en: "Rearrange", vi: "sắp xếp lại" }], examples: ["I'll arrange a meeting for next week.", "The song was arranged for a string quartet."] },
+                    N: { words: [{ en: "Arrangement", vi: "sự sắp xếp/bản phối khí" }, { en: "Arranger", vi: "người phối khí/người sắp xếp" }], examples: ["They made an arrangement to meet at 6 PM.", "He is a famous jazz arranger."] },
+                    Adj: { words: [{ en: "Arranged", vi: "đã được sắp đặt" }], examples: ["An arranged marriage.", "The books were arranged by subject."] },
+                    Adv: { words: [], examples: ["(Thường dùng 'By arrangement' - Theo sự sắp đặt trước)"] }
+                }
+            },
+            {
+                word: "ASSIST",
+                hint: "Hỗ trợ / Kiến tạo",
+                diff: "Giúp đỡ (trang trọng) hoặc pha kiến tạo trong thể thao.",
+                family: {
+                    V: { words: [{ en: "Assist", vi: "hỗ trợ/giúp đỡ" }], examples: ["The tutor will assist you with your homework.", "He assisted in the design of the new building."] },
+                    N: { words: [{ en: "Assistance", vi: "sự giúp đỡ/sự hỗ trợ" }, { en: "Assistant", vi: "người trợ lý/phụ tá" }, { en: "Assist (n)", vi: "pha kiến tạo (thể thao)" }], examples: ["Do you need any financial assistance?", "The striker had two goals and one assist."] },
+                    Adj: { words: [{ en: "Assistant", vi: "phụ tá/trợ lý (đứng trước danh từ)" }], examples: ["An assistant manager.", "The assistant director."] },
+                    Adv: { words: [], examples: ["(Thường dùng cụm 'With the assistance of')"] }
+                }
+            },
+            {
+                word: "ASSUME",
+                hint: "Giả định / Đảm nhiệm",
+                diff: "Cho là đúng (chưa bằng chứng) hoặc bắt đầu gánh vác trách nhiệm/quyền lực.",
+                family: {
+                    V: { words: [{ en: "Assume", vi: "cho rằng/giả định/đảm đương/nắm giữ" }], examples: ["I assume that you are tired.", "She assumed the role of CEO last month."] },
+                    N: { words: [{ en: "Assumption", vi: "sự giả định/sự gánh vác" }], examples: ["We need to challenge our basic assumptions.", "The assumption of power by the military."] },
+                    Adj: { words: [{ en: "Assumed", vi: "giả/không có thật/được cho là" }], examples: ["He travelled under an assumed name.", "The assumed costs were too high."] },
+                    Adv: { words: [{ en: "Assumedly", vi: "có vẻ như/được cho là" }], examples: ["Assumedly, the prices will rise next month."] }
+                }
+            },
+            {
+                word: "ATTACH",
+                hint: "Đính kèm / Gắn bó",
+                diff: "Kết nối vật lý, đính kèm file hoặc mối quan hệ tình cảm.",
+                family: {
+                    V: { words: [{ en: "Attach", vi: "đính kèm/gắn vào/trói buộc" }, { en: "Detach", vi: "tháo rời/tách ra" }], examples: ["Please attach a photo to your application.", "No blame attaches to him for the accident."] },
+                    N: { words: [{ en: "Attachment", vi: "tệp đính kèm/sự gắn bó/phụ tùng" }], examples: ["I've sent the report as an email attachment.", "A deep emotional attachment to his hometown."] },
+                    Adj: { words: [{ en: "Attached", vi: "được đính kèm/gắn bó/lệ thuộc" }, { en: "Detached", vi: "tách biệt/thờ ơ" }], examples: ["Please find the attached file.", "He felt detached from the rest of the group."] },
+                    Adv: { words: [{ en: "Detachedly", vi: "một cách khách quan/tách biệt" }], examples: ["She observed the events detachedly."] }
+                }
+            },
+            {
+                word: "BEAUTY",
+                hint: "Vẻ đẹp / Nét đẹp",
+                diff: "Gốc từ kinh điển để học về hậu tố -ify (động từ) và -ful (tính từ).",
+                family: {
+                    V: { words: [{ en: "Beautify", vi: "làm đẹp/tô điểm" }], examples: ["They are planning to beautify the city park."] },
+                    N: { words: [{ en: "Beauty", vi: "vẻ đẹp/người đẹp" }, { en: "Beautician", vi: "nhân viên thẩm mỹ" }], examples: ["She has both brains and beauty.", "The beautician applied the makeup."] },
+                    Adj: { words: [{ en: "Beautiful", vi: "đẹp/tuyệt vời" }, { en: "Beauteous", vi: "đẹp đẽ (văn chương)" }], examples: ["What a beautiful sunrise!", "The beauteous landscape of the valley."] },
+                    Adv: { words: [{ en: "Beautifully", vi: "một cách tốt đẹp/xinh đẹp" }], examples: ["The event was beautifully organized."] }
+                }
+            },
+            {
+                word: "BELIEVE",
+                hint: "Tin tưởng",
+                diff: "Sự khác biệt rõ rệt giữa V (f) và N (f).",
+                family: {
+                    V: { words: [{ en: "Believe", vi: "tin tưởng" }, { en: "Disbelieve", vi: "hoài nghi/không tin" }], examples: ["I believe you.", "He disbelieved the official story."] },
+                    N: { words: [{ en: "Belief", vi: "niềm tin/đức tin" }, { en: "Believer", vi: "tín đồ/người tin tưởng" }], examples: ["It is my belief that we will win.", "She is a great believer in exercise."] },
+                    Adj: { words: [{ en: "Believable", vi: "có thể tin được" }, { en: "Unbelievable", vi: "không thể tin nổi" }], examples: ["The excuse was hardly believable.", "Unbelievable! We won the lottery!"] },
+                    Adv: { words: [{ en: "Unbelievably", vi: "một cách khó tin/cực kỳ" }], examples: ["The weather was unbelievably hot."] }
+                }
+            },
+            {
+                word: "BENEFIT",
+                hint: "Lợi ích / Phúc lợi",
+                diff: "Từ vựng then chốt trong chủ đề Work & Healthcare.",
+                family: {
+                    V: { words: [{ en: "Benefit", vi: "có lợi/giúp ích cho" }], examples: ["The new law will benefit low-income families."] },
+                    N: { words: [{ en: "Benefit", vi: "lợi ích/phúc lợi/buổi từ thiện" }], examples: ["The benefits of exercise are well-known.", "The company offers a good medical benefit."] },
+                    Adj: { words: [{ en: "Beneficial", vi: "có lợi/có ích (+ to)" }, { en: "Beneficent", vi: "hay làm phúc/từ tâm" }], examples: ["A stay in the country will be beneficial to his health."] },
+                    Adv: { words: [{ en: "Beneficially", vi: "một cách có lợi" }], examples: ["The funds were beneficially invested."] }
+                }
+            },
+            {
+                word: "BEHAVE",
+                hint: "Cư xử / Đối xử",
+                diff: "Mô tả thái độ và hành động của con người/sự vật.",
+                family: {
+                    V: { words: [{ en: "Behave", vi: "cư xử/đối xử/chạy tốt (máy móc)" }, { en: "Misbehave", vi: "cư xử tệ/hư hỏng" }], examples: ["The children behaved very well.", "The car is behaving badly today."] },
+                    N: { words: [{ en: "Behavior", vi: "hành vi/cách cư xử" }, { en: "Misbehavior", vi: "hành vi xấu" }], examples: ["Good behavior is rewarded.", "His misbehavior at school led to a suspension."] },
+                    Adj: { words: [{ en: "Behavioral", vi: "thuộc về hành vi" }], examples: ["The child has some behavioral problems."] },
+                    Adv: { words: [{ en: "Behaviorally", vi: "về mặt hành vi" }], examples: ["The two species are behaviorally different."] }
+                }
+            },
+            {
+                word: "BEGIN",
+                hint: "Bắt đầu",
+                diff: "Gốc từ đơn giản nhưng danh từ 'Beginner' cực kỳ thông dụng.",
+                family: {
+                    V: { words: [{ en: "Begin", vi: "bắt đầu" }], examples: ["Let's begin the meeting."] },
+                    N: { words: [{ en: "Beginning", vi: "lúc bắt đầu/nguồn gốc" }, { en: "Beginner", vi: "người mới bắt đầu" }], examples: ["At the beginning of the film.", "This course is for total beginners."] },
+                    Adj: { words: [{ en: "Beginning", vi: "sơ khai/mới đầu" }], examples: ["A beginning student of English."] },
+                    Adv: { words: [], examples: ["(Thường dùng cụm 'In the beginning')"] }
+                }
+            },
+            {
+                word: "BLOOD",
+                hint: "Máu / Huyết",
+                diff: "Lưu ý sự biến đổi nguyên âm giữa danh từ (oo) và động từ (ee).",
+                family: {
+                    V: { words: [{ en: "Bleed", vi: "chảy máu/rỉ máu" }], examples: ["Your nose is bleeding."] },
+                    N: { words: [{ en: "Blood", vi: "máu" }, { en: "Bleeding", vi: "sự chảy máu" }], examples: ["Blood is thicker than water.", "The bleeding finally stopped."] },
+                    Adj: { words: [{ en: "Bloody", vi: "đẫm máu/tàn khốc" }, { en: "Bloodless", vi: "không đổ máu" }], examples: ["A bloody battle.", "A bloodless revolution."] },
+                    Adv: { words: [{ en: "Bloodily", vi: "một cách tàn khốc" }], examples: ["The rebellion was bloodily suppressed."] }
+                }
+            },
+            {
+                word: "BORE",
+                hint: "Gây buồn chán",
+                diff: "Phân biệt rõ tính từ đuôi -ed (người) và -ing (vật).",
+                family: {
+                    V: { words: [{ en: "Bore", vi: "gây buồn chán" }], examples: ["Am I boring you?"] },
+                    N: { words: [{ en: "Boredom", vi: "nỗi buồn tẻ/sự chán nản" }], examples: ["The children were crying with boredom."] },
+                    Adj: { words: [{ en: "Bored", vi: "thấy chán (người)" }, { en: "Boring", vi: "nhạt nhẽo (vật)" }], examples: ["I'm bored with this game.", "A very boring book."] },
+                    Adv: { words: [{ en: "Boringly", vi: "một cách nhàm chán" }], examples: ["The meeting was boringly long."] }
+                }
+            },
+            {
+                word: "BRIEF",
+                hint: "Ngắn gọn / Tóm tắt",
+                diff: "Vừa là tính từ, vừa là động từ 'tóm tắt thông tin'.",
+                family: {
+                    V: { words: [{ en: "Brief", vi: "tóm tắt/phổ biến thông tin" }], examples: ["The minister was briefed on the situation."] },
+                    N: { words: [{ en: "Brief", vi: "bản tóm tắt/hồ sơ vụ kiện" }, { en: "Brevity", vi: "sự ngắn gọn/sự súc tích" }], examples: ["Brevity is the soul of wit."] },
+                    Adj: { words: [{ en: "Brief", vi: "vắn tắt/ngắn ngủi" }], examples: ["A brief visit."] },
+                    Adv: { words: [{ en: "Briefly", vi: "một cách ngắn gọn/trong giây lát" }], examples: ["He explained briefly how the machine works."] }
+                }
+            },
+            {
+                word: "BRIGHT",
+                hint: "Sáng sủa / Thông minh",
+                diff: "Dùng cho cả ánh sáng vật lý và trí tuệ.",
+                family: {
+                    V: { words: [{ en: "Brighten", vi: "làm sáng lên/trở nên vui tươi" }], examples: ["The sun brightened the room.", "Her face brightened when she saw him."] },
+                    N: { words: [{ en: "Brightness", vi: "độ sáng/sự rực rỡ" }], examples: ["The brightness of the stars."] },
+                    Adj: { words: [{ en: "Bright", vi: "sáng/tươi tắn/thông minh" }], examples: ["A bright light.", "A bright student."] },
+                    Adv: { words: [{ en: "Brightly", vi: "rực rỡ/sáng sủa" }], examples: ["The moon shone brightly."] }
+                }
+            },
+            {
+                word: "BROAD",
+                hint: "Rộng rãi / Khái quát",
+                diff: "Từ gốc để tạo ra động từ 'Broaden' (mở rộng).",
+                family: {
+                    V: { words: [{ en: "Broaden", vi: "mở rộng" }], examples: ["Travel broadens the mind."] },
+                    N: { words: [{ en: "Breadth", vi: "chiều rộng/bề ngang/sự rộng rãi" }], examples: ["The breadth of his knowledge is amazing."] },
+                    Adj: { words: [{ en: "Broad", vi: "rộng/mênh mông/khái quát" }], examples: ["A broad street.", "In broad terms, the project was a success."] },
+                    Adv: { words: [{ en: "Broadly", vi: "một cách rộng rãi/về cơ bản" }], examples: ["Broadly speaking, I agree with you."] }
+                }
+            },
+            {
+                word: "BASE",
+                hint: "Căn cứ / Nền tảng",
+                diff: "Từ vựng quan trọng trong toán học, xây dựng và lý luận.",
+                family: {
+                    V: { words: [{ en: "Base", vi: "dựa trên/đặt căn cứ tại" }], examples: ["The company is based in Toronto.", "We base our decisions on facts."] },
+                    N: { words: [{ en: "Base", vi: "đế/nền tảng/căn cứ" }, { en: "Basis", vi: "nền tảng/cơ sở (lý thuyết)" }, { en: "Basics", vi: "những điều cơ bản" }], examples: ["The lamp has a heavy base.", "On a regular basis."] },
+                    Adj: { words: [{ en: "Basic", vi: "cơ bản" }, { en: "Baseless", vi: "không có cơ sở" }], examples: ["Basic human rights.", "Baseless accusations."] },
+                    Adv: { words: [{ en: "Basically", vi: "về cơ bản" }], examples: ["Basically, it's a very simple idea."] }
+                }
+            },
+            {
+                word: "BEAR",
+                hint: "Chịu đựng / Sinh sản",
+                diff: "Lưu ý tính từ 'Bearable' rất hay dùng trong giao tiếp.",
+                family: {
+                    V: { words: [{ en: "Bear", vi: "chịu đựng/sinh đẻ/mang vác" }], examples: ["I can't bear the pain.", "She has borne three children."] },
+                    N: { words: [{ en: "Bearer", vi: "người mang/người cầm phiếu" }], examples: ["The bearer of bad news."] },
+                    Adj: { words: [{ en: "Bearable", vi: "có thể chịu đựng được" }, { en: "Unbearable", vi: "không thể chịu nổi" }], examples: ["The heat was barely bearable.", "Unbearable noise."] },
+                    Adv: { words: [{ en: "Unbearably", vi: "một cách không chịu nổi" }], examples: ["It was unbearably hot."] }
+                }
+            },
+            {
+                word: "BEAT",
+                hint: "Đánh bại / Nhịp đập",
+                diff: "Từ này có sự chuyển đổi giữa hành động vật lý và trạng thái mệt mỏi.",
+                family: {
+                    V: { words: [{ en: "Beat", vi: "đánh bại/đập/nện" }], examples: ["Our team beat them 3-0.", "His heart beat faster."] },
+                    N: { words: [{ en: "Beat", vi: "nhịp/tiếng đập" }, { en: "Beating", vi: "sự thất bại/trận đòn" }], examples: ["I love the beat of this song."] },
+                    Adj: { words: [{ en: "Beaten", vi: "bị đánh bại/kiệt sức" }], examples: ["A beaten champion.", "I'm dead beaten (tôi kiệt sức rồi)."] },
+                    Adv: { words: [], examples: ["(Thường dùng 'Off the beaten track' - Nơi hẻo lánh)"] }
+                }
+            },
+            {
+                word: "BIND",
+                hint: "Ràng buộc / Kết nối",
+                diff: "Gốc từ của 'Boundary' (ranh giới) và các cam kết pháp lý.",
+                family: {
+                    V: { words: [{ en: "Bind", vi: "trói buộc/ràng buộc/đóng sách" }], examples: ["The agreement binds the two companies.", "The book was bound in leather."] },
+                    N: { words: [{ en: "Binding", vi: "viền/bìa sách" }, { en: "Bond", vi: "sự gắn kết/trái phiếu" }], examples: ["The binding of the book is torn."] },
+                    Adj: { words: [{ en: "Binding", vi: "có tính bắt buộc (pháp lý)" }], examples: ["A legally binding contract."] },
+                    Adv: { words: [], examples: ["(Thường dùng 'Bindingly')"] }
+                }
+            },
+            {
+                word: "BITTER",
+                hint: "Đắng / Cay nghiệt",
+                diff: "Mô tả cả vị giác lẫn cảm xúc tiêu cực.",
+                family: {
+                    V: { words: [{ en: "Embitter", vi: "làm cho cay cú/làm cho khổ sở" }], examples: ["He was embittered by his divorce."] },
+                    N: { words: [{ en: "Bitterness", vi: "vị đắng/sự cay đắng" }], examples: ["The bitterness of the coffee.", "She felt no bitterness towards him."] },
+                    Adj: { words: [{ en: "Bitter", vi: "đắng/cay nghiệt/rét buốt" }], examples: ["A bitter pill to swallow.", "A bitter wind."] },
+                    Adv: { words: [{ en: "Bitterly", vi: "một cách cay đắng/thảm thiết" }], examples: ["He wept bitterly.", "It is bitterly cold outside."] }
+                }
+            },
+            {
+                word: "BLOCK",
+                hint: "Ngăn chặn / Khối",
+                diff: "Từ đa năng, dùng nhiều trong kỹ thuật và xây dựng.",
+                family: {
+                    V: { words: [{ en: "Block", vi: "chặn đứng/phong tỏa" }], examples: ["A fallen tree blocked the road."] },
+                    N: { words: [{ en: "Block", vi: "khối/tòa nhà/sự tắc nghẽn" }, { en: "Blockage", vi: "vật gây tắc nghẽn" }], examples: ["A block of ice.", "The heart surgeon removed a blockage."] },
+                    Adj: { words: [{ en: "Blocked", vi: "bị tắc/bị chặn" }], examples: ["I have a blocked nose."] },
+                    Adv: { words: [], examples: ["(Thường dùng 'In blocks')"] }
+                }
+            },
+            {
+                word: "BOLD",
+                hint: "Táo bạo / Dũng cảm",
+                diff: "Phân biệt với 'Bald' (hói) - từ này chỉ sự mạnh dạn.",
+                family: {
+                    V: { words: [{ en: "Embolden", vi: "làm cho bạo dạn/khuyến khích" }], examples: ["Emboldened by the wine, he finally spoke."] },
+                    N: { words: [{ en: "Boldness", vi: "sự táo bạo/sự trơ tráo" }], examples: ["He had the boldness to ask for a raise."] },
+                    Adj: { words: [{ en: "Bold", vi: "táo bạo/dũng cảm/in đậm" }], examples: ["A bold move.", "Write the heading in bold type."] },
+                    Adv: { words: [{ en: "Boldly", vi: "một cách táo bạo" }], examples: ["He boldly stepped onto the stage."] }
+                }
+            },
+            {
+                word: "BOMB",
+                hint: "Bom / Đánh bom",
+                diff: "Trong tiếng lóng, nó có nghĩa là 'thất bại thảm hại'.",
+                family: {
+                    V: { words: [{ en: "Bomb", vi: "đánh bom/thất bại thảm hại" }], examples: ["The city was bombed.", "The play bombed on Broadway."] },
+                    N: { words: [{ en: "Bomb", vi: "quả bom" }, { en: "Bombing", vi: "vụ đánh bom" }, { en: "Bomber", vi: "máy bay ném bom/kẻ đặt bom" }], examples: ["A bomb disposal squad."] },
+                    Adj: { words: [{ en: "Bombproof", vi: "chống bom" }], examples: ["A bombproof shelter."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "BRAVE",
+                hint: "Can đảm",
+                diff: "Gần nghĩa với Bold nhưng mang sắc thái cao quý hơn.",
+                family: {
+                    V: { words: [{ en: "Brave", vi: "bất chấp/đương đầu với" }], examples: ["They braved the snow to get to school."] },
+                    N: { words: [{ en: "Bravery", vi: "sự dũng cảm/lòng can đảm" }], examples: ["He was awarded a medal for bravery."] },
+                    Adj: { words: [{ en: "Brave", vi: "can đảm" }], examples: ["A brave soldier."] },
+                    Adv: { words: [{ en: "Bravely", vi: "một cách dũng cảm" }], examples: ["She fought the disease bravely."] }
+                }
+            },
+            {
+                word: "BREATH",
+                hint: "Hơi thở",
+                diff: "Cực kỳ dễ nhầm: Breath (Danh từ - đọc là 'breth') vs Breathe (Động từ - đọc là 'bri:th').",
+                family: {
+                    V: { words: [{ en: "Breathe", vi: "hít thở" }], examples: ["Breathe in deeply."] },
+                    N: { words: [{ en: "Breath", vi: "hơi thở" }, { en: "Breather", vi: "sự nghỉ ngơi ngắn" }], examples: ["Take a deep breath.", "I need a short breather."] },
+                    Adj: { words: [{ en: "Breathless", vi: "hết hơi/hổn hển" }, { en: "Breathing", vi: "thuộc về hô hấp" }], examples: ["She was breathless after the run.", "Breathing difficulties."] },
+                    Adv: { words: [{ en: "Breathlessly", vi: "một cách hổn hển" }], examples: ["'He's here!' she said breathlessly."] }
+                }
+            },
+            {
+                word: "BRILLIANT",
+                hint: "Rực rỡ / Tài giỏi",
+                diff: "Dùng để mô tả ánh sáng cực mạnh hoặc trí tuệ xuất chúng.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Brilliance", vi: "sự rực rỡ/tài năng lỗi lạc" }], examples: ["The brilliance of the diamond.", "A writer of real brilliance."] },
+                    Adj: { words: [{ en: "Brilliant", vi: "sáng láng/rực rỡ/tài ba" }], examples: ["A brilliant academic career.", "What a brilliant idea!"] },
+                    Adv: { words: [{ en: "Brilliantly", vi: "một cách vẻ vang/sáng chói" }], examples: ["The sun shone brilliantly.", "She performed brilliantly in the exam."] }
+                }
+            },
+            {
+                word: "BUILD",
+                hint: "Xây dựng",
+                diff: "Gốc từ của ngành xây dựng và phát triển cơ bắp/vóc dáng.",
+                family: {
+                    V: { words: [{ en: "Build", vi: "xây dựng/xây đắp" }, { en: "Rebuild", vi: "xây dựng lại" }], examples: ["They are building a new bridge.", "We need to rebuild our relationship."] },
+                    N: { words: [{ en: "Building", vi: "tòa nhà/sự xây dựng" }, { en: "Builder", vi: "thợ xây/chủ thầu" }, { en: "Build (n)", vi: "vóc dáng" }], examples: ["A tall office building.", "He has a muscular build."] },
+                    Adj: { words: [{ en: "Built-in", vi: "được gắn liền/tích hợp" }], examples: ["A built-in wardrobe."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "BURN",
+                hint: "Đốt cháy",
+                diff: "Mô tả cả sự cháy vật lý và cảm giác nóng rát.",
+                family: {
+                    V: { words: [{ en: "Burn", vi: "đốt/cháy/bị phỏng" }], examples: ["The fire is burning brightly.", "I burned my finger."] },
+                    N: { words: [{ en: "Burn", vi: "vết bỏng" }, { en: "Burner", vi: "lò đốt/bếp" }], examples: ["A third-degree burn.", "Put the kettle on the back burner."] },
+                    Adj: { words: [{ en: "Burning", vi: "đang cháy/nồng nhiệt" }, { en: "Burnt", vi: "bị cháy/khét" }], examples: ["A burning desire to win.", "The toast smells burnt."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "BUSINESS",
+                hint: "Kinh doanh / Việc làm",
+                diff: "Gốc từ là 'Busy' (bận rộn). Lưu ý cách viết danh từ.",
+                family: {
+                    V: { words: [{ en: "Busy", vi: "làm cho bận rộn" }], examples: ["She busied herself with the chores."] },
+                    N: { words: [{ en: "Business", vi: "việc kinh doanh/việc riêng" }, { en: "Busyness", vi: "sự bận rộn" }], examples: ["It's none of your business!", "The busyness of modern life."] },
+                    Adj: { words: [{ en: "Busy", vi: "bận rộn/náo nhiệt" }, { en: "Businesslike", vi: "chuyên nghiệp/đâu ra đó" }], examples: ["A busy street.", "A businesslike approach to the problem."] },
+                    Adv: { words: [{ en: "Busily", vi: "một cách bận rộn" }], examples: ["The ants were working busily."] }
+                }
+            },
+            {
+                word: "BOTHER",
+                hint: "Làm phiền / Lo lắng",
+                diff: "Dùng khi nói về sự quấy rầy hoặc nỗ lực làm gì đó.",
+                family: {
+                    V: { words: [{ en: "Bother", vi: "làm phiền/bận tâm" }], examples: ["Sorry to bother you.", "Don't bother to lock the door."] },
+                    N: { words: [{ en: "Bother", vi: "điều phiền toái" }], examples: ["I don't want to be a bother."] },
+                    Adj: { words: [{ en: "Bothersome", vi: "gây khó chịu/phiền hà" }], examples: ["A bothersome cold that won't go away."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "BOTTOM",
+                hint: "Đáy / Cuối cùng",
+                diff: "Trái nghĩa với 'Top'. Dùng trong cả vị trí và mức độ thấp nhất.",
+                family: {
+                    V: { words: [{ en: "Bottom (out)", vi: "chạm đáy (xong bắt đầu tăng)" }], examples: ["Economists think the recession has bottomed out."] },
+                    N: { words: [{ en: "Bottom", vi: "phần dưới cùng/mông" }], examples: ["The bottom of the sea."] },
+                    Adj: { words: [{ en: "Bottom", vi: "dưới cùng/thấp nhất" }, { en: "Bottomless", vi: "không đáy/vô tận" }], examples: ["The bottom drawer.", "A bottomless pit of lies."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "BOUND",
+                hint: "Giới hạn / Nhất quyết",
+                diff: "Từ vựng rất mạnh để chỉ sự chắc chắn hoặc ranh giới.",
+                family: {
+                    V: { words: [{ en: "Bound", vi: "giới hạn/nhảy vọt" }], examples: ["The field is bounded by a river."] },
+                    N: { words: [{ en: "Boundary", vi: "biên giới/ranh giới" }, { en: "Bounds", vi: "giới hạn (số nhiều)" }], examples: ["To set boundaries in a relationship.", "His arrogance knows no bounds."] },
+                    Adj: { words: [{ en: "Bound", vi: "chắc chắn/bị ràng buộc" }, { en: "Boundless", vi: "vô hạn" }], examples: ["You're bound to feel nervous.", "Boundless energy."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "BREAK",
+                hint: "Vỡ / Ngắt quãng",
+                diff: "Gốc từ tạo ra hàng loạt tính từ chỉ trạng thái của đồ vật.",
+                family: {
+                    V: { words: [{ en: "Break", vi: "làm vỡ/phá vỡ/nghỉ ngơi" }], examples: ["Who broke the window?", "Let's break for lunch."] },
+                    N: { words: [{ en: "Break", vi: "giờ nghỉ/sự nứt vỡ" }, { en: "Breakage", vi: "đồ vật bị vỡ/việc làm vỡ" }], examples: ["Take a 10-minute break.", "The insurance covers breakage."] },
+                    Adj: { words: [{ en: "Breakable", vi: "dễ vỡ" }, { en: "Broken", vi: "đã vỡ/hỏng/suy sụp" }], examples: ["Fragile, keep away from breakable items.", "A broken heart."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "BATTLE",
+                hint: "Trận chiến / Đấu tranh",
+                diff: "Dùng cho cả quân sự và cuộc đấu tranh nội tâm/bệnh tật.",
+                family: {
+                    V: { words: [{ en: "Battle", vi: "chiến đấu/vật lộn (+ with/against)" }], examples: ["He is battling against cancer."] },
+                    N: { words: [{ en: "Battle", vi: "trận đánh/cuộc chiến" }, { en: "Battleship", vi: "tàu chiến" }], examples: ["The Battle of Waterloo."] },
+                    Adj: { words: [{ en: "Battle-hardened", vi: "dày dạn kinh nghiệm chiến đấu" }], examples: ["Battle-hardened troops."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "BALANCE",
+                hint: "Cân bằng / Số dư",
+                diff: "Cực kỳ quan trọng trong Tài chính và Đời sống.",
+                family: {
+                    V: { words: [{ en: "Balance", vi: "làm cho cân bằng" }], examples: ["You need to balance work and play."] },
+                    N: { words: [{ en: "Balance", vi: "sự cân bằng/số dư tài khoản" }], examples: ["Keep your balance!", "What is your current bank balance?"] },
+                    Adj: { words: [{ en: "Balanced", vi: "cân đối/công bằng" }, { en: "Unbalanced", vi: "mất thăng bằng/lệch lạc" }], examples: ["A balanced diet.", "An unbalanced mind."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CALCULATE",
+                hint: "Tính toán",
+                diff: "Dùng cho cả tính toán con số và tính toán chiến lược.",
+                family: {
+                    V: { words: [{ en: "Calculate", vi: "tính toán" }, { en: "Recalculate", vi: "tính toán lại" }], examples: ["We need to calculate the total cost.", "The GPS is recalculating the route."] },
+                    N: { words: [{ en: "Calculation", vi: "sự tính toán" }, { en: "Calculator", vi: "máy tính bỏ túi" }], examples: ["A mistake in the calculation.", "You can use a calculator during the exam."] },
+                    Adj: { words: [{ en: "Calculated", vi: "có tính toán/có dự tính" }, { en: "Calculating", vi: "thâm độc/biết tính toán" }], examples: ["It was a calculated risk.", "He is a cold and calculating person."] },
+                    Adv: { words: [{ en: "Calculatedly", vi: "một cách có tính toán" }], examples: ["He acted calculatedly to win."] }
+                }
+            },
+            {
+                word: "CARE",
+                hint: "Chăm sóc / Quan tâm",
+                diff: "Từ gốc tạo ra nhiều tính từ trái nghĩa quan trọng (Careful vs Careless).",
+                family: {
+                    V: { words: [{ en: "Care", vi: "quan tâm/chăm sóc" }], examples: ["She cares deeply about the environment."] },
+                    N: { words: [{ en: "Care", vi: "sự chăm sóc/sự cẩn thận" }, { en: "Caregiver", vi: "người chăm sóc" }], examples: ["Handle with care.", "He is the primary caregiver for his mother."] },
+                    Adj: { words: [{ en: "Careful", vi: "cẩn thận" }, { en: "Careless", vi: "cẩu thả" }, { en: "Caring", vi: "chu đáo/tốt bụng" }], examples: ["Be careful with that vase.", "A careless mistake.", "He is a very caring person."] },
+                    Adv: { words: [{ en: "Carefully", vi: "một cách cẩn thận" }, { en: "Carelessly", vi: "một cách cẩu thả" }], examples: ["Read the instructions carefully."] }
+                }
+            },
+            {
+                word: "CELEBRATE",
+                hint: "Kỷ niệm / Ăn mừng",
+                diff: "Lưu ý danh từ 'Celebrity' mang nghĩa người nổi tiếng.",
+                family: {
+                    V: { words: [{ en: "Celebrate", vi: "ăn mừng/kỷ niệm" }], examples: ["How do you celebrate New Year?"] },
+                    N: { words: [{ en: "Celebration", vi: "lễ kỷ niệm/sự ăn mừng" }, { en: "Celebrity", vi: "người nổi tiếng" }], examples: ["The wedding celebration lasted all night.", "She became a national celebrity."] },
+                    Adj: { words: [{ en: "Celebrated", vi: "nổi tiếng/lừng danh" }, { en: "Celebratory", vi: "mang tính kỷ niệm" }], examples: ["A celebrated artist.", "We had a celebratory dinner."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CENTER",
+                hint: "Trung tâm",
+                diff: "Dùng để chỉ vị trí địa lý hoặc sự tập trung tư tưởng.",
+                family: {
+                    V: { words: [{ en: "Center", vi: "tập trung vào (+ on)" }], examples: ["The discussion centered on the new budget."] },
+                    N: { words: [{ en: "Center", vi: "trung tâm" }, { en: "Centralization", vi: "sự tập trung hóa" }], examples: ["The city center."] },
+                    Adj: { words: [{ en: "Central", vi: "trung tâm/chủ chốt" }, { en: "Centralized", vi: "mang tính tập trung" }], examples: ["Central heating.", "A centralized control system."] },
+                    Adv: { words: [{ en: "Centrally", vi: "ở trung tâm" }], examples: ["The hotel is centrally located."] }
+                }
+            },
+            {
+                word: "CHANGE",
+                hint: "Thay đổi",
+                diff: "Từ vựng cơ bản nhưng có bộ tính từ phái sinh rất phong phú.",
+                family: {
+                    V: { words: [{ en: "Change", vi: "thay đổi/biến đổi" }], examples: ["The weather is changing."] },
+                    N: { words: [{ en: "Change", vi: "sự thay đổi/tiền lẻ" }], examples: ["A change in plans.", "Do you have any change?"] },
+                    Adj: { words: [{ en: "Changeable", vi: "dễ thay đổi" }, { en: "Unchanged", vi: "không đổi" }, { en: "Changeless", vi: "vĩnh cửu" }], examples: ["The weather here is very changeable.", "The situation remains unchanged."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CHARACTER",
+                hint: "Nhân vật / Đặc điểm",
+                diff: "Gốc từ của 'Characteristic' (đặc tính) – từ cực hay gặp trong TOEIC.",
+                family: {
+                    V: { words: [{ en: "Characterize", vi: "mô tả đặc điểm" }], examples: ["How would you characterize his style?"] },
+                    N: { words: [{ en: "Character", vi: "tính cách/nhân vật" }, { en: "Characteristic", vi: "đặc tính/đặc điểm" }], examples: ["He has a strong character.", "Genetic characteristics."] },
+                    Adj: { words: [{ en: "Characteristic", vi: "tiêu biểu/đặc trưng" }], examples: ["She responded with characteristic enthusiasm."] },
+                    Adv: { words: [{ en: "Characteristically", vi: "một cách đặc trưng" }], examples: ["Characteristically, he was late."] }
+                }
+            },
+            {
+                word: "CHARITY",
+                hint: "Từ thiện",
+                diff: "Dùng để chỉ tổ chức hoặc lòng tốt của con người.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Charity", vi: "hội từ thiện/lòng từ thiện" }], examples: ["The money goes to local charities."] },
+                    Adj: { words: [{ en: "Charitable", vi: "có lòng từ thiện/khoan dung" }], examples: ["A charitable organization.", "Try to be more charitable towards your rivals."] },
+                    Adv: { words: [{ en: "Charitably", vi: "một cách khoan dung" }], examples: ["She interpreted his silence charitably."] }
+                }
+            },
+            {
+                word: "CHOOSE",
+                hint: "Lựa chọn",
+                diff: "Lưu ý sự thay đổi cách viết giữa V (oo) và N (oi).",
+                family: {
+                    V: { words: [{ en: "Choose", vi: "lựa chọn" }], examples: ["You can choose any color you like."] },
+                    N: { words: [{ en: "Choice", vi: "sự lựa chọn" }], examples: ["I have no choice."] },
+                    Adj: { words: [{ en: "Choosy", vi: "kén chọn" }], examples: ["She's very choosy about her clothes."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CIVIL",
+                hint: "Dân sự / Lịch sự",
+                diff: "Gốc từ của 'Civilization' (nền văn minh).",
+                family: {
+                    V: { words: [{ en: "Civilize", vi: "khai hóa văn minh" }], examples: ["A mission to civilize the world."] },
+                    N: { words: [{ en: "Civilian", vi: "thường dân" }, { en: "Civilization", vi: "nền văn minh" }, { en: "Civility", vi: "sự lịch sự" }], examples: ["Many civilians were killed in the war."] },
+                    Adj: { words: [{ en: "Civil", vi: "thuộc về dân sự/lịch sự" }, { en: "Civilized", vi: "văn minh" }], examples: ["Civil rights.", "A civilized society."] },
+                    Adv: { words: [{ en: "Civilly", vi: "một cách lịch sự" }], examples: ["They treated each other civilly."] }
+                }
+            },
+            {
+                word: "CLEAR",
+                hint: "Rõ ràng / Sạch sẽ",
+                diff: "Một từ đa năng: vừa là tính từ, động từ và trạng từ.",
+                family: {
+                    V: { words: [{ en: "Clear", vi: "dọn dẹp/làm cho rõ ràng" }, { en: "Clarify", vi: "làm cho dễ hiểu" }], examples: ["Clear the table.", "Could you clarify that point?"] },
+                    N: { words: [{ en: "Clarity", vi: "sự rõ ràng/sự trong trẻo" }, { en: "Clearance", vi: "sự dọn dẹp/sự cho phép" }], examples: ["Clarity of thought.", "Security clearance."] },
+                    Adj: { words: [{ en: "Clear", vi: "rõ ràng/trong suốt" }], examples: ["Clear water.", "Is that clear?"] },
+                    Adv: { words: [{ en: "Clearly", vi: "một cách rõ ràng" }], examples: ["Clearly, something is wrong."] }
+                }
+            },
+            {
+                word: "COLLECT",
+                hint: "Thu thập / Sưu tầm",
+                diff: "Gốc từ của các danh từ chỉ người và vật trong bộ sưu tập.",
+                family: {
+                    V: { words: [{ en: "Collect", vi: "thu thập/sưu tầm" }], examples: ["I collect rare coins.", "A crowd began to collect."] },
+                    N: { words: [{ en: "Collection", vi: "bộ sưu tập" }, { en: "Collector", vi: "người sưu tầm" }], examples: ["A private art collection.", "A tax collector."] },
+                    Adj: { words: [{ en: "Collective", vi: "tập thể/chung" }], examples: ["Collective responsibility."] },
+                    Adv: { words: [{ en: "Collectively", vi: "một cách tập thể" }], examples: ["The group decided collectively."] }
+                }
+            },
+            {
+                word: "COMFORT",
+                hint: "An ủi / Sự thoải mái",
+                diff: "Cực kỳ quan trọng để học cặp tính từ trái nghĩa: Comfortable vs Uncomfortable.",
+                family: {
+                    V: { words: [{ en: "Comfort", vi: "an ủi/dỗ dành" }], examples: ["She comforted the crying child."] },
+                    N: { words: [{ en: "Comfort", vi: "sự thoải mái/lời an ủi" }], examples: ["I enjoy the comforts of home."] },
+                    Adj: { words: [{ en: "Comfortable", vi: "thoải mái" }, { en: "Uncomfortable", vi: "khó chịu" }], examples: ["A comfortable chair.", "I feel uncomfortable in this suit."] },
+                    Adv: { words: [{ en: "Comfortably", vi: "một cách dễ chịu" }], examples: ["They live very comfortably."] }
+                }
+            },
+            {
+                word: "COMMUNICATE",
+                hint: "Giao tiếp",
+                diff: "Từ vựng cốt lõi trong xã hội và công nghệ.",
+                family: {
+                    V: { words: [{ en: "Communicate", vi: "giao tiếp/truyền đạt" }], examples: ["We communicate by email."] },
+                    N: { words: [{ en: "Communication", vi: "sự giao tiếp/thông tin" }, { en: "Communicator", vi: "người truyền tin" }], examples: ["Good communication is vital."] },
+                    Adj: { words: [{ en: "Communicative", vi: "cởi mở/thích trò chuyện" }], examples: ["He wasn't very communicative today."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "COMPARE",
+                hint: "So sánh",
+                diff: "Cung cấp các tính từ để mô tả sự tương đồng hoặc khác biệt.",
+                family: {
+                    V: { words: [{ en: "Compare", vi: "so sánh" }], examples: ["Compare our prices with others."] },
+                    N: { words: [{ en: "Comparison", vi: "sự so sánh" }], examples: ["By comparison with him, I am rich."] },
+                    Adj: { words: [{ en: "Comparable", vi: "có thể so sánh được" }, { en: "Comparative", vi: "tương đối/so sánh" }], examples: ["The two situations are not comparable.", "Comparative anatomy."] },
+                    Adv: { words: [{ en: "Comparatively", vi: "tương đối/khá là" }], examples: ["The exam was comparatively easy."] }
+                }
+            },
+            {
+                word: "COMPETE",
+                hint: "Cạnh tranh",
+                diff: "Dùng nhiều trong kinh doanh và thể thao.",
+                family: {
+                    V: { words: [{ en: "Compete", vi: "cạnh tranh/thi đấu" }], examples: ["Small shops can't compete with big supermarkets."] },
+                    N: { words: [{ en: "Competition", vi: "cuộc thi/sự cạnh tranh" }, { en: "Competitor", vi: "đối thủ" }], examples: ["A swimming competition."] },
+                    Adj: { words: [{ en: "Competitive", vi: "có tính cạnh tranh" }, { en: "Competent", vi: "có đủ năng lực" }], examples: ["A highly competitive market."] },
+                    Adv: { words: [{ en: "Competitively", vi: "một cách cạnh tranh" }], examples: ["Products priced competitively."] }
+                }
+            },
+            {
+                word: "COMPLETE",
+                hint: "Hoàn thành / Đầy đủ",
+                diff: "Vừa là động từ vừa là tính từ.",
+                family: {
+                    V: { words: [{ en: "Complete", vi: "hoàn thành" }], examples: ["I've completed the task."] },
+                    N: { words: [{ en: "Completion", vi: "sự hoàn thành" }, { en: "Completeness", vi: "tính trọn vẹn" }], examples: ["The project is near completion."] },
+                    Adj: { words: [{ en: "Complete", vi: "đầy đủ/trọn vẹn" }, { en: "Incomplete", vi: "chưa xong" }], examples: ["A complete set of tools."] },
+                    Adv: { words: [{ en: "Completely", vi: "hoàn toàn" }], examples: ["I completely forgot."] }
+                }
+            },
+            {
+                word: "CONCLUDE",
+                hint: "Kết luận",
+                diff: "Từ vựng quan trọng để viết kết bài hoặc đưa ra quyết định.",
+                family: {
+                    V: { words: [{ en: "Conclude", vi: "kết luận/chấm dứt" }], examples: ["The meeting concluded at 4 PM."] },
+                    N: { words: [{ en: "Conclusion", vi: "sự kết luận/phần cuối" }], examples: ["I've come to the conclusion that..."] },
+                    Adj: { words: [{ en: "Conclusive", vi: "xác đáng/thuyết phục" }], examples: ["Conclusive evidence."] },
+                    Adv: { words: [{ en: "Conclusively", vi: "một cách thuyết phục" }], examples: ["Proven conclusively."] }
+                }
+            },
+            {
+                word: "CONFIRM",
+                hint: "Xác nhận",
+                diff: "Dùng khi xác minh thông tin hoặc đặt chỗ.",
+                family: {
+                    V: { words: [{ en: "Confirm", vi: "xác nhận/chứng thực" }], examples: ["Please confirm your flight."] },
+                    N: { words: [{ en: "Confirmation", vi: "sự xác nhận" }], examples: ["We are waiting for confirmation."] },
+                    Adj: { words: [{ en: "Confirmed", vi: "đã được xác nhận/thâm căn cố đế" }], examples: ["A confirmed bachelor."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CONNECT",
+                hint: "Kết nối",
+                diff: "Gốc từ của các thuật ngữ về internet và giao thông.",
+                family: {
+                    V: { words: [{ en: "Connect", vi: "kết nối/liên quan" }, { en: "Disconnect", vi: "ngắt kết nối" }], examples: ["Connect the printer to the PC."] },
+                    N: { words: [{ en: "Connection", vi: "sự kết nối/mối liên hệ" }], examples: ["A poor internet connection."] },
+                    Adj: { words: [{ en: "Connected", vi: "có liên quan" }, { en: "Connective", vi: "dùng để liên kết" }], examples: ["All computers are connected."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CONSIDER",
+                hint: "Xem xét / Cân nhắc",
+                diff: "Lưu ý tính từ 'Considerable' (đáng kể) rất hay thi.",
+                family: {
+                    V: { words: [{ en: "Consider", vi: "xem xét/coi là" }], examples: ["Please consider my offer."] },
+                    N: { words: [{ en: "Consideration", vi: "sự cân nhắc" }], examples: ["That is a minor consideration."] },
+                    Adj: { words: [{ en: "Considerable", vi: "đáng kể" }, { en: "Considerate", vi: "tận tâm/chu đáo" }], examples: ["A considerable amount of money.", "It was considerate of you to call."] },
+                    Adv: { words: [{ en: "Considerably", vi: "một cách đáng kể" }], examples: ["Prices have risen considerably."] }
+                }
+            },
+            {
+                word: "CONSTRUCT",
+                hint: "Xây dựng",
+                diff: "Mang nghĩa xây dựng mang tính kỹ thuật hoặc lý luận.",
+                family: {
+                    V: { words: [{ en: "Construct", vi: "xây dựng" }], examples: ["They are constructing a new bridge."] },
+                    N: { words: [{ en: "Construction", vi: "sự xây dựng/công trình" }, { en: "Constructor", vi: "nhà thầu" }], examples: ["Road construction."] },
+                    Adj: { words: [{ en: "Constructive", vi: "có tính xây dựng/hữu ích" }], examples: ["Constructive criticism."] },
+                    Adv: { words: [{ en: "Constructively", vi: "một cách hữu ích" }], examples: ["How to use your time constructively."] }
+                }
+            },
+            {
+                word: "CONTINUE",
+                hint: "Tiếp tục",
+                diff: "Cung cấp các tính từ chỉ sự liên tục không ngừng.",
+                family: {
+                    V: { words: [{ en: "Continue", vi: "tiếp tục" }, { en: "Discontinue", vi: "ngừng lại" }], examples: ["The rain continued all day."] },
+                    N: { words: [{ en: "Continuity", vi: "sự liên tục" }, { en: "Continuation", vi: "sự tiếp nối" }], examples: ["A break in the continuity of the story."] },
+                    Adj: { words: [{ en: "Continuous", vi: "liên tục (không hở)" }, { en: "Continual", vi: "liên miên (có ngắt quãng)" }], examples: ["Continuous noise."] },
+                    Adv: { words: [{ en: "Continuously", vi: "một cách không ngừng" }], examples: ["It rained continuously for 24 hours."] }
+                }
+            },
+            {
+                word: "CONVINCE",
+                hint: "Thuyết phục",
+                diff: "Làm cho ai đó tin vào điều gì đó.",
+                family: {
+                    V: { words: [{ en: "Convince", vi: "thuyết phục" }], examples: ["I'm convinced that he's innocent."] },
+                    N: { words: [{ en: "Conviction", vi: "sự tin tưởng/án phạt" }], examples: ["A deep religious conviction."] },
+                    Adj: { words: [{ en: "Convincing", vi: "đầy thuyết phục" }], examples: ["A convincing argument."] },
+                    Adv: { words: [{ en: "Convincingly", vi: "một cách thuyết phục" }], examples: ["She argued her case convincingly."] }
+                }
+            },
+            {
+                word: "CREATE",
+                hint: "Sáng tạo",
+                diff: "Từ vựng then chốt cho ngành nghệ thuật và đổi mới.",
+                family: {
+                    V: { words: [{ en: "Create", vi: "tạo ra" }, { en: "Recreate", vi: "tái tạo" }], examples: ["Create a new file."] },
+                    N: { words: [{ en: "Creation", vi: "sự sáng tạo" }, { en: "Creator", vi: "người sáng tạo" }, { en: "Creativity", vi: "khả năng sáng tạo" }], examples: ["The creation of life."] },
+                    Adj: { words: [{ en: "Creative", vi: "đầy sáng tạo" }], examples: ["A creative writer."] },
+                    Adv: { words: [{ en: "Creatively", vi: "một cách sáng tạo" }], examples: ["Think creatively."] }
+                }
+            },
+            {
+                word: "CRITIC",
+                hint: "Nhà phê bình",
+                diff: "Học cách phân biệt giữa người phê bình và hành động phê bình.",
+                family: {
+                    V: { words: [{ en: "Criticize", vi: "phê bình/chỉ trích" }], examples: ["Don't criticize my work."] },
+                    N: { words: [{ en: "Critic", vi: "nhà phê bình" }, { en: "Criticism", vi: "sự phê bình" }], examples: ["A film critic."] },
+                    Adj: { words: [{ en: "Critical", vi: "nguy cấp/hay chỉ trích" }], examples: ["The patient is in critical condition."] },
+                    Adv: { words: [{ en: "Critically", vi: "một cách nghiêm trọng" }], examples: ["He was critically ill."] }
+                }
+            },
+            {
+                word: "CURIOSITY",
+                hint: "Sự tò mò",
+                diff: "Tính từ 'Curious' rất thông dụng trong đời sống.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Curiosity", vi: "sự tò mò" }], examples: ["Curiosity killed the cat."] },
+                    Adj: { words: [{ en: "Curious", vi: "tò mò/kỳ lạ" }], examples: ["I was curious about his reaction."] },
+                    Adv: { words: [{ en: "Curiously", vi: "một cách tò mò/kỳ lạ thay" }], examples: ["Curiously enough, he never mentioned it."] }
+                }
+            },
+            {
+                word: "CUSTOM",
+                hint: "Phong tục / Khách hàng",
+                diff: "Gốc của 'Customer' và 'Customize' (tùy chỉnh).",
+                family: {
+                    V: { words: [{ en: "Customize", vi: "tùy chỉnh theo ý khách" }], examples: ["You can customize the software."] },
+                    N: { words: [{ en: "Custom", vi: "phong tục" }, { en: "Customer", vi: "khách hàng" }], examples: ["Social customs."] },
+                    Adj: { words: [{ en: "Customary", vi: "theo phong tục/thông lệ" }], examples: ["It is customary to tip the waiter."] },
+                    Adv: { words: [{ en: "Customarily", vi: "theo thông lệ" }], examples: ["He customarily arrives early."] }
+                }
+            },
+            {
+                word: "CALM",
+                hint: "Bình tĩnh",
+                diff: "Dùng để mô tả thời tiết hoặc trạng thái tâm lý.",
+                family: {
+                    V: { words: [{ en: "Calm (down)", vi: "làm dịu đi" }], examples: ["Calm down!"] },
+                    N: { words: [{ en: "Calmness", vi: "sự bình tĩnh" }], examples: ["His calmness in danger."] },
+                    Adj: { words: [{ en: "Calm", vi: "điềm tĩnh/êm đềm" }], examples: ["A calm sea."] },
+                    Adv: { words: [{ en: "Calmly", vi: "một cách bình tĩnh" }], examples: ["She answered calmly."] }
+                }
+            },
+            {
+                word: "CAPABLE",
+                hint: "Có khả năng",
+                diff: "Thường đi với cấu trúc 'Capable of + V-ing'.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Capability", vi: "năng lực/khả năng" }], examples: ["Beyond my capability."] },
+                    Adj: { words: [{ en: "Capable", vi: "có năng lực" }, { en: "Incapable", vi: "không thể" }], examples: ["A very capable manager."] },
+                    Adv: { words: [{ en: "Capably", vi: "một cách thành thạo" }], examples: ["The situation was capably handled."] }
+                }
+            },
+            {
+                word: "CAPITAL",
+                hint: "Thủ đô / Vốn / Chữ hoa",
+                diff: "Một từ đa nghĩa cực kỳ quan trọng trong kinh tế và ngôn ngữ.",
+                family: {
+                    V: { words: [{ en: "Capitalize", vi: "viết hoa/tận dụng (+ on)" }], examples: ["Capitalize the first letter.", "Capitalize on the opportunity."] },
+                    N: { words: [{ en: "Capital", vi: "vốn/thủ đô/chữ hoa" }, { en: "Capitalism", vi: "chủ nghĩa tư bản" }], examples: ["Investment capital."] },
+                    Adj: { words: [{ en: "Capital", vi: "chính/quan trọng nhất" }], examples: ["A capital error."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CAUSE",
+                hint: "Nguyên nhân / Gây ra",
+                diff: "Dùng trong khoa học và tranh luận xã hội.",
+                family: {
+                    V: { words: [{ en: "Cause", vi: "gây ra" }], examples: ["What caused the accident?"] },
+                    N: { words: [{ en: "Cause", vi: "nguyên nhân/nguyên cớ" }], examples: ["There is no cause for alarm."] },
+                    Adj: { words: [{ en: "Causal", vi: "thuộc quan hệ nhân quả" }], examples: ["A causal link."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CAUTION",
+                hint: "Cảnh báo / Thận trọng",
+                diff: "Mức độ thận trọng cao hơn 'Care'.",
+                family: {
+                    V: { words: [{ en: "Caution", vi: "cảnh báo/nhắc nhở" }], examples: ["The police cautioned him."] },
+                    N: { words: [{ en: "Caution", vi: "sự thận trọng" }], examples: ["Exercise extreme caution."] },
+                    Adj: { words: [{ en: "Cautious", vi: "thận trọng/dè dặt" }], examples: ["He is cautious with money."] },
+                    Adv: { words: [{ en: "Cautiously", vi: "một cách thận trọng" }], examples: ["Walk cautiously on the ice."] }
+                }
+            },
+            {
+                word: "CERTAIN",
+                hint: "Chắc chắn",
+                diff: "Dùng để nhấn mạnh sự khẳng định.",
+                family: {
+                    V: { words: [{ en: "Ascertain", vi: "xác minh/tìm hiểu chắc chắn" }], examples: ["Ascertain the facts."] },
+                    N: { words: [{ en: "Certainty", vi: "sự chắc chắn" }, { en: "Uncertainty", vi: "sự bất định" }], examples: ["I can say with certainty that..."] },
+                    Adj: { words: [{ en: "Certain", vi: "chắc chắn/nào đó" }, { en: "Uncertain", vi: "không chắc" }], examples: ["I am certain of it."] },
+                    Adv: { words: [{ en: "Certainly", vi: "chắc chắn rồi" }], examples: ["Certainly, sir."] }
+                }
+            },
+            {
+                word: "CHALLENGE",
+                hint: "Thử thách",
+                diff: "Vừa là danh từ vừa là động từ.",
+                family: {
+                    V: { words: [{ en: "Challenge", vi: "thử thách/thách thức" }], examples: ["He challenged me to a race."] },
+                    N: { words: [{ en: "Challenge", vi: "thử thách" }, { en: "Challenger", vi: "người thách đấu" }], examples: ["Face a new challenge."] },
+                    Adj: { words: [{ en: "Challenging", vi: "khó khăn/kích thích" }], examples: ["A challenging job."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CHEER",
+                hint: "Cổ vũ / Vui vẻ",
+                diff: "Từ gốc cho các tính từ chỉ tâm trạng.",
+                family: {
+                    V: { words: [{ en: "Cheer", vi: "cổ vũ" }, { en: "Cheer up", vi: "làm cho vui lên" }], examples: ["Cheer up!"] },
+                    N: { words: [{ en: "Cheer", vi: "tiếng cổ vũ" }, { en: "Cheerfulness", vi: "sự vui vẻ" }], examples: ["A loud cheer."] },
+                    Adj: { words: [{ en: "Cheerful", vi: "vui vẻ" }, { en: "Cheerless", vi: "ảm đạm" }], examples: ["A cheerful smile."] },
+                    Adv: { words: [{ en: "Cheerfully", vi: "một cách vui vẻ" }], examples: ["He whistled cheerfully."] }
+                }
+            },
+            {
+                word: "CLASS",
+                hint: "Lớp học / Giai cấp",
+                diff: "Gốc của từ 'Classify' (phân loại) rất hay dùng trong khoa học.",
+                family: {
+                    V: { words: [{ en: "Classify", vi: "phân loại" }], examples: ["Classify these books by subject."] },
+                    N: { words: [{ en: "Class", vi: "lớp" }, { en: "Classification", vi: "sự phân loại" }], examples: ["Middle class."] },
+                    Adj: { words: [{ en: "Classic", vi: "kinh điển" }, { en: "Classical", vi: "cổ điển" }], examples: ["A classic example."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "CLOSE",
+                hint: "Đóng / Gần",
+                diff: "Phân biệt cách phát âm của động từ (z) và tính từ (s).",
+                family: {
+                    V: { words: [{ en: "Close", vi: "đóng" }], examples: ["Close the door."] },
+                    N: { words: [{ en: "Closure", vi: "sự bế mạc/đóng cửa/thanh thản" }], examples: ["Road closure."] },
+                    Adj: { words: [{ en: "Close", vi: "gần gũi" }], examples: ["A close friend."] },
+                    Adv: { words: [{ en: "Closely", vi: "một cách chặt chẽ/gần gũi" }], examples: ["Watch him closely."] }
+                }
+            },
+            {
+                word: "COLOR",
+                hint: "Màu sắc",
+                diff: "Dùng để mô tả sự đa dạng và sinh động.",
+                family: {
+                    V: { words: [{ en: "Color", vi: "tô màu/nhuộm màu" }], examples: ["The leaves colored in autumn."] },
+                    N: { words: [{ en: "Color", vi: "màu sắc" }], examples: ["A bright color."] },
+                    Adj: { words: [{ en: "Colorful", vi: "nhiều màu sắc" }, { en: "Colorless", vi: "không màu" }], examples: ["A colorful painting."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "COMBINE",
+                hint: "Kết hợp",
+                diff: "Dùng khi trộn lẫn các thành phần hoặc ý tưởng.",
+                family: {
+                    V: { words: [{ en: "Combine", vi: "kết hợp" }], examples: ["Combine ingredients in a bowl."] },
+                    N: { words: [{ en: "Combination", vi: "sự kết hợp" }], examples: ["A winning combination."] },
+                    Adj: { words: [{ en: "Combined", vi: "được kết hợp" }], examples: ["Their combined efforts."] },
+                    Adv: [],
+                }
+            },
+            // --- NHÓM CHỮ D (30 TỪ) ---
+            {
+                word: "DANGER",
+                hint: "Nguy hiểm",
+                diff: "Gốc từ để học cách chuyển đổi từ Danh từ sang Tính từ và Động từ gây nguy hiểm.",
+                family: {
+                    V: { words: [{ en: "Endanger", vi: "gây nguy hiểm" }], examples: ["Pollution endangers many species."] },
+                    N: { words: [{ en: "Danger", vi: "sự nguy hiểm/mối hiểm họa" }], examples: ["The building is in danger of collapsing."] },
+                    Adj: { words: [{ en: "Dangerous", vi: "nguy hiểm" }, { en: "Endangered", vi: "đang gặp nguy cấp" }], examples: ["A dangerous road.", "Endangered animals."] },
+                    Adv: { words: [{ en: "Dangerously", vi: "một cách nguy hiểm" }], examples: ["He was driving dangerously fast."] }
+                }
+            },
+            {
+                word: "DARK",
+                hint: "Tối tăm / Đậm màu",
+                diff: "Dùng cho ánh sáng, màu sắc và cả tâm trạng.",
+                family: {
+                    V: { words: [{ en: "Darken", vi: "làm tối đi/trở nên u ám" }], examples: ["The sky darkened as the storm approached."] },
+                    N: { words: [{ en: "Darkness", vi: "bóng tối" }], examples: ["She was afraid of the darkness."] },
+                    Adj: { words: [{ en: "Dark", vi: "tối/đậm màu" }], examples: ["A dark room.", "Dark blue."] },
+                    Adv: { words: [{ en: "Darkly", vi: "một cách u ám/bí ẩn" }], examples: ["He smiled darkly."] }
+                }
+            },
+            {
+                word: "DECIDE",
+                hint: "Quyết định",
+                diff: "Từ vựng cốt lõi trong công việc và kỹ năng giải quyết vấn đề.",
+                family: {
+                    V: { words: [{ en: "Decide", vi: "quyết định" }], examples: ["I can't decide what to wear."] },
+                    N: { words: [{ en: "Decision", vi: "sự quyết định" }, { en: "Decisiveness", vi: "tự quyết đoán" }], examples: ["That was a difficult decision."] },
+                    Adj: { words: [{ en: "Decisive", vi: "quyết đoán/mang tính quyết định" }], examples: ["A decisive victory.", "A decisive factor."] },
+                    Adv: { words: [{ en: "Decisively", vi: "một cách quyết đoán" }], examples: ["She acted decisively to stop the fire."] }
+                }
+            },
+            {
+                word: "DECORATE",
+                hint: "Trang trí",
+                diff: "Thường dùng trong chủ đề nội thất, nhà cửa và sự kiện.",
+                family: {
+                    V: { words: [{ en: "Decorate", vi: "trang trí" }], examples: ["They decorated the room with flowers."] },
+                    N: { words: [{ en: "Decoration", vi: "sự trang trí/đồ trang trí" }], examples: ["Christmas decorations."] },
+                    Adj: { words: [{ en: "Decorative", vi: "để trang trí/làm cảnh" }], examples: ["The mirror is purely decorative."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DEEP",
+                hint: "Sâu / Sâu sắc",
+                diff: "Học cách chuyển đổi danh từ sang 'Depth' (có đuôi -th).",
+                family: {
+                    V: { words: [{ en: "Deepen", vi: "làm sâu thêm/trở nên trầm trọng" }], examples: ["The crisis deepened over the weekend."] },
+                    N: { words: [{ en: "Depth", vi: "chiều sâu/độ sâu" }], examples: ["What is the depth of the lake?"] },
+                    Adj: { words: [{ en: "Deep", vi: "sâu/sâu sắc" }], examples: ["A deep river.", "Deep sleep."] },
+                    Adv: { words: [{ en: "Deeply", vi: "một cách sâu sắc" }], examples: ["I'm deeply sorry."] }
+                }
+            },
+            {
+                word: "DEFEND",
+                hint: "Phòng thủ / Bảo vệ",
+                diff: "Dùng trong thể thao, quân sự và bảo vệ quan điểm.",
+                family: {
+                    V: { words: [{ en: "Defend", vi: "bảo vệ/phòng thủ" }], examples: ["The army defended the city."] },
+                    N: { words: [{ en: "Defense", vi: "sự phòng thủ/lời bào chữa" }, { en: "Defendant", vi: "bị cáo" }], examples: ["Self-defense classes."] },
+                    Adj: { words: [{ en: "Defensive", vi: "có tính phòng thủ" }], examples: ["A defensive player."] },
+                    Adv: { words: [{ en: "Defensively", vi: "một cách dè chừng" }], examples: ["He reacted defensively to the criticism."] }
+                }
+            },
+            {
+                word: "DEFINE",
+                hint: "Định nghĩa / Xác định",
+                diff: "Gốc từ của 'Definitely' - trạng từ hay bị viết sai chính tả nhất.",
+                family: {
+                    V: { words: [{ en: "Define", vi: "định nghĩa/xác định rõ" }], examples: ["Can you define this word?"] },
+                    N: { words: [{ en: "Definition", vi: "định nghĩa/độ nét" }], examples: ["High-definition (HD) TV."] },
+                    Adj: { words: [{ en: "Definite", vi: "xác định/rõ ràng" }], examples: ["A definite answer."] },
+                    Adv: { words: [{ en: "Definitely", vi: "chắc chắn/rõ ràng" }], examples: ["I'll definitely be there."] }
+                }
+            },
+            {
+                word: "DELIGHT",
+                hint: "Vui mừng / Thú vị",
+                diff: "Phân biệt Delighted (người thấy vui) và Delightful (vật gây vui).",
+                family: {
+                    V: { words: [{ en: "Delight", vi: "làm ai đó vui sướng" }], examples: ["The show delighted the audience."] },
+                    N: { words: [{ en: "Delight", vi: "sự vui sướng/điều thú vị" }], examples: ["A trip to the zoo is a great delight."] },
+                    Adj: { words: [{ en: "Delighted", vi: "rất vui" }, { en: "Delightful", vi: "thú vị/tuyệt vời" }], examples: ["I'm delighted to meet you."] },
+                    Adv: { words: [{ en: "Delightfully", vi: "một cách thú vị" }], examples: ["The room was delightfully cool."] }
+                }
+            },
+            {
+                word: "DELIVER",
+                hint: "Giao hàng / Phát biểu",
+                diff: "Dùng cho vận chuyển hoặc trình bày một bài nói.",
+                family: {
+                    V: { words: [{ en: "Deliver", vi: "giao hàng/phát biểu" }], examples: ["We deliver to your door."] },
+                    N: { words: [{ en: "Delivery", vi: "sự giao hàng/sự phát biểu" }], examples: ["Express delivery."] },
+                    Adj: { words: [{ en: "Deliverable", vi: "có thể bàn giao được" }], examples: ["Project deliverables."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DEMAND",
+                hint: "Yêu cầu / Nhu cầu",
+                diff: "Dùng cho sự đòi hỏi mạnh mẽ hoặc nhu cầu thị trường.",
+                family: {
+                    V: { words: [{ en: "Demand", vi: "yêu cầu/đòi hỏi" }], examples: ["I demand an explanation."] },
+                    N: { words: [{ en: "Demand", vi: "sự yêu cầu/nhu cầu" }], examples: ["Supply and demand."] },
+                    Adj: { words: [{ en: "Demanding", vi: "khắt khe/đòi hỏi cao" }], examples: ["A very demanding boss."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DEPEND",
+                hint: "Phụ thuộc",
+                diff: "Cực kỳ quan trọng để học cặp trái nghĩa Dependent vs Independent.",
+                family: {
+                    V: { words: [{ en: "Depend", vi: "phụ thuộc (+ on)" }], examples: ["It depends on the weather."] },
+                    N: { words: [{ en: "Dependence", vi: "sự phụ thuộc" }, { en: "Independence", vi: "sự độc lập" }], examples: ["Financial independence."] },
+                    Adj: { words: [{ en: "Dependent", vi: "phụ thuộc" }, { en: "Independent", vi: "độc lập" }], examples: ["Independent states."] },
+                    Adv: { words: [{ en: "Independently", vi: "một cách độc lập" }], examples: ["Work independently."] }
+                }
+            },
+            {
+                word: "DESCRIBE",
+                hint: "Mô tả",
+                diff: "Lưu ý danh từ kết thúc bằng -ption thay vì -be.",
+                family: {
+                    V: { words: [{ en: "Describe", vi: "mô tả" }], examples: ["Describe your house."] },
+                    N: { words: [{ en: "Description", vi: "sự mô tả" }], examples: ["A brief description."] },
+                    Adj: { words: [{ en: "Descriptive", vi: "có tính mô tả" }], examples: ["Descriptive writing."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DESIRE",
+                hint: "Khao khát",
+                diff: "Mức độ mạnh hơn 'Want'.",
+                family: {
+                    V: { words: [{ en: "Desire", vi: "mong muốn/khao khát" }], examples: ["The hotel has everything you could desire."] },
+                    N: { words: [{ en: "Desire", vi: "lòng ham muốn" }], examples: ["A strong desire to win."] },
+                    Adj: { words: [{ en: "Desirable", vi: "đáng khao khát/có lợi" }, { en: "Desirous", vi: "thèm muốn" }], examples: ["A desirable neighborhood."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DESTROY",
+                hint: "Phá hủy",
+                diff: "Lưu ý danh từ biến đổi thành Destruction.",
+                family: {
+                    V: { words: [{ en: "Destroy", vi: "phá hủy" }], examples: ["The building was destroyed by fire."] },
+                    N: { words: [{ en: "Destruction", vi: "sự phá hủy" }, { en: "Destructor", vi: "người phá hủy" }], examples: ["Mass destruction."] },
+                    Adj: { words: [{ en: "Destructive", vi: "có tính tàn phá" }], examples: ["Destructive habits."] },
+                    Adv: { words: [{ en: "Destructively", vi: "một cách tàn phá" }], examples: ["Acting destructively."] }
+                }
+            },
+            {
+                word: "DETAIL",
+                hint: "Chi tiết",
+                diff: "Vừa là danh từ vừa là động từ 'trình bày chi tiết'.",
+                family: {
+                    V: { words: [{ en: "Detail", vi: "chi tiết hóa/liệt kê" }], examples: ["The report details the progress."] },
+                    N: { words: [{ en: "Detail", vi: "chi tiết" }], examples: ["Attention to detail."] },
+                    Adj: { words: [{ en: "Detailed", vi: "cặn kẽ/tỉ mỉ" }], examples: ["A detailed map."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DEVELOP",
+                hint: "Phát triển",
+                diff: "Từ vựng then chốt trong kinh tế, phần mềm và sinh học.",
+                family: {
+                    V: { words: [{ en: "Develop", vi: "phát triển" }], examples: ["Develop a new product."] },
+                    N: { words: [{ en: "Development", vi: "sự phát triển" }, { en: "Developer", vi: "người phát triển/lập trình viên" }], examples: ["Career development."] },
+                    Adj: { words: [{ en: "Developing", vi: "đang phát triển" }, { en: "Developed", vi: "đã phát triển" }], examples: ["Developing countries."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DIE",
+                hint: "Chết",
+                diff: "Phân biệt Die (V), Death (N), Dead (Adj) và Deadly (Adj/Adv).",
+                family: {
+                    V: { words: [{ en: "Die", vi: "chết" }], examples: ["Plants die without water."] },
+                    N: { words: [{ en: "Death", vi: "cái chết" }], examples: ["A matter of life and death."] },
+                    Adj: { words: [{ en: "Dead", vi: "đã chết" }, { en: "Deadly", vi: "chết người/cực kỳ" }], examples: ["A dead body.", "A deadly poison."] },
+                    Adv: { words: [{ en: "Deadly", vi: "cực kỳ/như chết" }], examples: ["Deadly serious."] }
+                }
+            },
+            {
+                word: "DIFFER",
+                hint: "Khác biệt",
+                diff: "Gốc từ của Different và Difference.",
+                family: {
+                    V: { words: [{ en: "Differ", vi: "khác với/không đồng ý" }], examples: ["Opinions differ on this."] },
+                    N: { words: [{ en: "Difference", vi: "sự khác biệt" }, { en: "Differentiation", vi: "sự phân biệt" }], examples: ["Make a difference."] },
+                    Adj: { words: [{ en: "Different", vi: "khác nhau" }], examples: ["A different approach."] },
+                    Adv: { words: [{ en: "Differently", vi: "một cách khác biệt" }], examples: ["Think differently."] }
+                }
+            },
+            {
+                word: "DIRECT",
+                hint: "Trực tiếp / Chỉ hướng",
+                diff: "Học về phương hướng và sự quản lý.",
+                family: {
+                    V: { words: [{ en: "Direct", vi: "chỉ hướng/đạo diễn/quản lý" }], examples: ["Who directed the movie?"] },
+                    N: { words: [{ en: "Direction", vi: "phương hướng/sự chỉ dẫn" }, { en: "Director", vi: "giám đốc/đạo diễn" }], examples: ["Follow the directions."] },
+                    Adj: { words: [{ en: "Direct", vi: "trực tiếp" }, { en: "Indirect", vi: "gián tiếp" }], examples: ["A direct flight."] },
+                    Adv: { words: [{ en: "Directly", vi: "một cách trực tiếp" }], examples: ["Contact me directly."] }
+                }
+            },
+            {
+                word: "DISAPPOINT",
+                hint: "Làm thất vọng",
+                diff: "Học cách dùng đuôi -ed và -ing cho cảm xúc.",
+                family: {
+                    V: { words: [{ en: "Disappoint", vi: "làm thất vọng" }], examples: ["I'm sorry to disappoint you."] },
+                    N: { words: [{ en: "Disappointment", vi: "sự thất vọng" }], examples: ["A deep disappointment."] },
+                    Adj: { words: [{ en: "Disappointed", vi: "thấy thất vọng" }, { en: "Disappointing", vi: "gây thất vọng" }], examples: ["A disappointing result."] },
+                    Adv: { words: [{ en: "Disappointingly", vi: "một cách thất vọng" }], examples: ["The film was disappointingly short."] }
+                }
+            },
+            {
+                word: "DISCOVER",
+                hint: "Khám phá",
+                diff: "Tìm ra điều gì đó đã tồn tại nhưng chưa biết.",
+                family: {
+                    V: { words: [{ en: "Discover", vi: "khám phá/tìm ra" }], examples: ["Columbus discovered America."] },
+                    N: { words: [{ en: "Discovery", vi: "sự khám phá" }], examples: ["A major scientific discovery."] },
+                    Adj: { words: [{ en: "Discoverable", vi: "có thể tìm thấy được" }], examples: ["Hidden but discoverable."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DISCUSS",
+                hint: "Thảo luận",
+                diff: "Lưu ý danh từ chuyển thành Discussion.",
+                family: {
+                    V: { words: [{ en: "Discuss", vi: "thảo luận" }], examples: ["Discuss the plan."] },
+                    N: { words: [{ en: "Discussion", vi: "cuộc thảo luận" }], examples: ["Have a discussion."] },
+                    Adj: { words: [{ en: "Discussable", vi: "có thể thảo luận" }], examples: ["It is a discussable issue."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DISTANT",
+                hint: "Xa cách",
+                diff: "Dùng cho khoảng cách và thái độ con người.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Distance", vi: "khoảng cách" }], examples: ["Long-distance running."] },
+                    Adj: { words: [{ en: "Distant", vi: "xa xôi/lạnh nhạt" }], examples: ["In the distant future."] },
+                    Adv: { words: [{ en: "Distantly", vi: "xa xa/mang máng" }], examples: ["Related distantly."] }
+                }
+            },
+            {
+                word: "DISTRIBUTE",
+                hint: "Phân phối",
+                diff: "Từ vựng quan trọng trong Logistics và Thương mại.",
+                family: {
+                    V: { words: [{ en: "Distribute", vi: "phân phối/phân phát" }], examples: ["Distribute leaflets."] },
+                    N: { words: [{ en: "Distribution", vi: "sự phân phối" }, { en: "Distributor", vi: "nhà phân phối" }], examples: ["Channel of distribution."] },
+                    Adj: { words: [{ en: "Distributive", vi: "có tính phân phối" }], examples: ["Distributive justice."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DIVIDE",
+                hint: "Chia ra",
+                diff: "Dùng trong toán học và phân chia nhóm.",
+                family: {
+                    V: { words: [{ en: "Divide", vi: "chia/phân chia" }], examples: ["Divide the cake into eight."] },
+                    N: { words: [{ en: "Division", vi: "sự phân chia/phép chia/bộ phận" }], examples: ["The sales division."] },
+                    Adj: { words: [{ en: "Divisible", vi: "có thể chia hết" }], examples: ["8 is divisible by 2."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DOCUMENT",
+                hint: "Tài liệu",
+                diff: "Vừa là danh từ vừa là động từ 'ghi lại bằng tư liệu'.",
+                family: {
+                    V: { words: [{ en: "Document", vi: "ghi chép/dẫn chứng" }], examples: ["Document your work."] },
+                    N: { words: [{ en: "Document", vi: "tài liệu/văn kiện" }, { en: "Documentation", vi: "tư liệu hướng dẫn" }], examples: ["Legal documents."] },
+                    Adj: { words: [{ en: "Documentary", vi: "thuộc về tài liệu/phim tài liệu" }], examples: ["A documentary film."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "DOUBT",
+                hint: "Nghi ngờ",
+                diff: "Phân biệt Doubtful (nghi ngờ) và Doubtless (không nghi ngờ).",
+                family: {
+                    V: { words: [{ en: "Doubt", vi: "nghi ngờ" }], examples: ["I doubt it."] },
+                    N: { words: [{ en: "Doubt", vi: "sự nghi ngờ" }], examples: ["Without a doubt."] },
+                    Adj: { words: [{ en: "Doubtful", vi: "nghi ngờ/không chắc" }, { en: "Doubtless", vi: "không nghi ngờ" }], examples: ["It is doubtful whether..."] },
+                    Adv: { words: [{ en: "Doubtfully", vi: "một cách nghi ngờ" }, { en: "Doubtlessly", vi: "chắc chắn" }], examples: ["She looked at him doubtfully."] }
+                }
+            },
+            {
+                word: "DRAMA",
+                hint: "Kịch / Kịch tính",
+                diff: "Gốc từ của Dramatic - thay đổi đáng kể.",
+                family: {
+                    V: { words: [{ en: "Dramatize", vi: "kịch hóa" }], examples: ["Dramatize a novel."] },
+                    N: { words: [{ en: "Drama", vi: "vở kịch/sự kịch tính" }], examples: ["A family drama."] },
+                    Adj: { words: [{ en: "Dramatic", vi: "kịch tính/đáng kể" }], examples: ["A dramatic change in price."] },
+                    Adv: { words: [{ en: "Dramatically", vi: "một cách đáng kể" }], examples: ["Prices fell dramatically."] }
+                }
+            },
+            {
+                word: "DREAM",
+                hint: "Mơ ước",
+                diff: "Dùng cho giấc mơ khi ngủ và tham vọng.",
+                family: {
+                    V: { words: [{ en: "Dream", vi: "mơ thấy" }], examples: ["Dream of success."] },
+                    N: { words: [{ en: "Dream", vi: "giấc mơ" }, { en: "Dreamer", vi: "người hay mơ mộng" }], examples: ["Achieve your dreams."] },
+                    Adj: { words: [{ en: "Dreamy", vi: "mơ màng" }], examples: ["A dreamy look."] },
+                    Adv: { words: [{ en: "Dreamily", vi: "một cách mơ màng" }], examples: ["She stared dreamily out of the window."] }
+                }
+            },
+            {
+                word: "DRESS",
+                hint: "Mặc đồ / Váy",
+                diff: "Dùng để mô tả cách ăn mặc.",
+                family: {
+                    V: { words: [{ en: "Dress", vi: "mặc quần áo" }, { en: "Undress", vi: "cởi đồ" }], examples: ["Get dressed."] },
+                    N: { words: [{ en: "Dress", vi: "váy/cách ăn mặc" }], examples: ["Evening dress."] },
+                    Adj: { words: [{ en: "Dressed", vi: "đang mặc đồ" }], examples: ["Well-dressed."] },
+                    Adv: [],
+                }
+            },
+            // --- NHÓM CHỮ E (30 TỪ) ---
+            {
+                word: "EAGER",
+                hint: "Hăng hái / Khát khao",
+                diff: "Dùng để chỉ sự nhiệt tình, sẵn lòng làm việc gì đó.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Eagerness", vi: "sự hăng hái/nhiệt tình" }], examples: ["I couldn't hide my eagerness to get started."] },
+                    Adj: { words: [{ en: "Eager", vi: "hăng hái/háo hức" }], examples: ["Eager students.", "She is eager to please."] },
+                    Adv: { words: [{ en: "Eagerly", vi: "một cách háo hức" }], examples: ["They eagerly awaited the news."] }
+                }
+            },
+            {
+                word: "EARN",
+                hint: "Kiếm tiền / Giành được",
+                diff: "Thường dùng cho tiền lương hoặc sự tôn trọng, danh tiếng.",
+                family: {
+                    V: { words: [{ en: "Earn", vi: "kiếm (tiền)/giành được" }], examples: ["He earns a lot of money.", "You've earned a rest."] },
+                    N: { words: [{ en: "Earnings", vi: "tiền lương/lợi nhuận" }, { en: "Earner", vi: "người kiếm tiền" }], examples: ["Export earnings.", "A low earner."] },
+                    Adj: [],
+                    Adv: [],
+                }
+            },
+            {
+                word: "EASY",
+                hint: "Dễ dàng",
+                diff: "Gốc từ đơn giản nhưng biến thể Ease (V/N) rất hay gặp.",
+                family: {
+                    V: { words: [{ en: "Ease", vi: "làm dịu đi/làm cho dễ dàng" }], examples: ["The medicine eased the pain."] },
+                    N: { words: [{ en: "Ease", vi: "sự thoải mái/dễ dàng" }], examples: ["He passed the exam with ease."] },
+                    Adj: { words: [{ en: "Easy", vi: "dễ dàng" }, { en: "Uneasy", vi: "lo lắng/không yên" }], examples: ["An easy task.", "I feel uneasy about this."] },
+                    Adv: { words: [{ en: "Easily", vi: "một cách dễ dàng" }], examples: ["I can easily finish it."] }
+                }
+            },
+            {
+                word: "ECONOMY",
+                hint: "Kinh tế",
+                diff: "Cực kỳ quan trọng để phân biệt Economic (thuộc kinh tế) và Economical (tiết kiệm).",
+                family: {
+                    V: { words: [{ en: "Economize", vi: "tiết kiệm/chi tiêu chừng mực" }], examples: ["We need to economize on fuel."] },
+                    N: { words: [{ en: "Economy", vi: "nền kinh tế/sự tiết kiệm" }, { en: "Economics", vi: "kinh tế học" }, { en: "Economist", vi: "nhà kinh tế học" }], examples: ["The global economy."] },
+                    Adj: { words: [{ en: "Economic", vi: "thuộc về kinh tế" }, { en: "Economical", vi: "tiết kiệm (rẻ)" }], examples: ["Economic growth.", "An economical car."] },
+                    Adv: { words: [{ en: "Economically", vi: "về mặt kinh tế" }], examples: ["The country is struggling economically."] }
+                }
+            },
+            {
+                word: "EDUCATE",
+                hint: "Giáo dục",
+                diff: "Gốc từ của toàn bộ ngành giáo dục.",
+                family: {
+                    V: { words: [{ en: "Educate", vi: "giáo dục/dạy dỗ" }], examples: ["She was educated at home."] },
+                    N: { words: [{ en: "Education", vi: "nền giáo dục" }, { en: "Educator", vi: "nhà giáo dục" }], examples: ["Higher education."] },
+                    Adj: { words: [{ en: "Educational", vi: "mang tính giáo dục" }, { en: "Educated", vi: "có học thức" }], examples: ["An educational film.", "A well-educated person."] },
+                    Adv: { words: [{ en: "Educationally", vi: "về mặt giáo dục" }], examples: ["Educationally disadvantaged children."] }
+                }
+            },
+            {
+                word: "EFFECT",
+                hint: "Tác động / Ảnh hưởng",
+                diff: "Phân biệt Effect (N) và Affect (V).",
+                family: {
+                    V: { words: [{ en: "Effect", vi: "thực hiện/đạt được" }], examples: ["To effect a change."] },
+                    N: { words: [{ en: "Effect", vi: "sự ảnh hưởng/tác động" }], examples: ["Side effects of the drug."] },
+                    Adj: { words: [{ en: "Effective", vi: "hiệu quả" }, { en: "Ineffective", vi: "không hiệu quả" }], examples: ["An effective solution."] },
+                    Adv: { words: [{ en: "Effectively", vi: "một cách hiệu quả" }], examples: ["Communicate effectively."] }
+                }
+            },
+            {
+                word: "ELECT",
+                hint: "Bầu cử",
+                diff: "Dùng trong chính trị hoặc lựa chọn chính thức.",
+                family: {
+                    V: { words: [{ en: "Elect", vi: "bầu chọn/lựa chọn" }], examples: ["He was elected president."] },
+                    N: { words: [{ en: "Election", vi: "cuộc bầu cử" }, { en: "Electorate", vi: "toàn bộ cử tri" }], examples: ["A general election."] },
+                    Adj: { words: [{ en: "Elective", vi: "tự chọn/do bầu cử" }], examples: ["An elective course."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "EMBARRASS",
+                hint: "Làm ngượng ngùng",
+                diff: "Lưu ý có 2 chữ 'r' và 2 chữ 's'.",
+                family: {
+                    V: { words: [{ en: "Embarrass", vi: "làm cho xấu hổ/ngượng" }], examples: ["I didn't want to embarrass him."] },
+                    N: { words: [{ en: "Embarrassment", vi: "sự ngượng ngùng" }], examples: ["To my embarrassment, I forgot her name."] },
+                    Adj: { words: [{ en: "Embarrassed", vi: "thấy xấu hổ" }, { en: "Embarrassing", vi: "gây xấu hổ" }], examples: ["An embarrassing situation."] },
+                    Adv: { words: [{ en: "Embarrassingly", vi: "một cách đáng xấu hổ" }], examples: ["The party was embarrassingly empty."] }
+                }
+            },
+            {
+                word: "EMERGE",
+                hint: "Nổi lên / Hiện ra",
+                diff: "Dùng khi một sự thật hoặc một vật xuất hiện từ nơi kín đáo.",
+                family: {
+                    V: { words: [{ en: "Emerge", vi: "nổi lên/xuất hiện" }], examples: ["The sun emerged from behind the clouds."] },
+                    N: { words: [{ en: "Emergence", vi: "sự xuất hiện" }, { en: "Emergency", vi: "tình trạng khẩn cấp" }], examples: ["The emergence of new technologies."] },
+                    Adj: { words: [{ en: "Emergent", vi: "mới nổi" }], examples: ["Emergent nations."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "EMOTION",
+                hint: "Cảm xúc",
+                diff: "Gốc từ mô tả trạng thái nội tâm con người.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Emotion", vi: "cảm xúc" }], examples: ["She showed no emotion."] },
+                    Adj: { words: [{ en: "Emotional", vi: "thuộc về cảm xúc/dễ cảm động" }, { en: "Emotionless", vi: "vô cảm" }], examples: ["An emotional speech."] },
+                    Adv: { words: [{ en: "Emotionally", vi: "về mặt cảm xúc" }], examples: ["He is emotionally stable."] }
+                }
+            },
+            {
+                word: "EMPLOY",
+                hint: "Thuê / Sử dụng",
+                diff: "Gốc từ của các thuật ngữ về việc làm.",
+                family: {
+                    V: { words: [{ en: "Employ", vi: "thuê làm/sử dụng" }], examples: ["The factory employs 500 people."] },
+                    N: { words: [{ en: "Employment", vi: "việc làm" }, { en: "Employer", vi: "chủ thuê" }, { en: "Employee", vi: "người lao động" }, { en: "Unemployment", vi: "sự thất nghiệp" }], examples: ["Full-time employment."] },
+                    Adj: { words: [{ en: "Employable", vi: "có kỹ năng để được thuê" }, { en: "Unemployed", vi: "thất nghiệp" }], examples: ["Unemployed workers."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "EMPTY",
+                hint: "Trống rỗng",
+                diff: "Vừa là tính từ, vừa là động từ 'làm trống'.",
+                family: {
+                    V: { words: [{ en: "Empty", vi: "đổ hết ra/làm trống" }], examples: ["Empty the trash, please."] },
+                    N: { words: [{ en: "Emptiness", vi: "sự trống rỗng" }], examples: ["A feeling of emptiness."] },
+                    Adj: { words: [{ en: "Empty", vi: "trống không" }], examples: ["An empty box."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "ENCOURAGE",
+                hint: "Khuyến khích",
+                diff: "Ngược nghĩa với Discourage. Lưu ý tiền tố En-.",
+                family: {
+                    V: { words: [{ en: "Encourage", vi: "khuyến khích/động viên" }], examples: ["My parents encouraged me to study hard."] },
+                    N: { words: [{ en: "Encouragement", vi: "sự động viên" }], examples: ["He needs a bit of encouragement."] },
+                    Adj: { words: [{ en: "Encouraging", vi: "mang tính khích lệ" }], examples: ["Encouraging results."] },
+                    Adv: { words: [{ en: "Encouragingly", vi: "một cách khích lệ" }], examples: ["She smiled encouragingly."] }
+                }
+            },
+            {
+                word: "END",
+                hint: "Kết thúc",
+                diff: "Học cách tạo tính từ 'vô tận' (Endless).",
+                family: {
+                    V: { words: [{ en: "End", vi: "chấm dứt" }], examples: ["The movie ended at 10."] },
+                    N: { words: [{ en: "End", vi: "phần cuối/mục đích" }, { en: "Ending", vi: "cái kết (phim/truyện)" }], examples: ["A happy ending."] },
+                    Adj: { words: [{ en: "Endless", vi: "vô tận" }], examples: ["An endless wait."] },
+                    Adv: { words: [{ en: "Endlessly", vi: "một cách không ngừng" }], examples: ["They talked endlessly."] }
+                }
+            },
+            {
+                word: "ENERGY",
+                hint: "Năng lượng",
+                diff: "Dùng cho cả vật lý và sức sống con người.",
+                family: {
+                    V: { words: [{ en: "Energize", vi: "tiếp thêm năng lượng" }], examples: ["The news energized the team."] },
+                    N: { words: [{ en: "Energy", vi: "năng lượng/sức lực" }], examples: ["Renewable energy."] },
+                    Adj: { words: [{ en: "Energetic", vi: "mạnh mẽ/đầy năng lượng" }], examples: ["An energetic dance."] },
+                    Adv: { words: [{ en: "Energetically", vi: "một cách hăng hái" }], examples: ["He worked energetically."] }
+                }
+            },
+            {
+                word: "ENJOY",
+                hint: "Thưởng thức / Tận hưởng",
+                diff: "Động từ thường gặp, lưu ý danh từ và tính từ.",
+                family: {
+                    V: { words: [{ en: "Enjoy", vi: "tận hưởng/thích" }], examples: ["I enjoy swimming."] },
+                    N: { words: [{ en: "Enjoyment", vi: "sự thích thú" }], examples: ["His greatest enjoyment is music."] },
+                    Adj: { words: [{ en: "Enjoyable", vi: "thú vị/có thể tận hưởng" }], examples: ["An enjoyable evening."] },
+                    Adv: { words: [{ en: "Enjoyably", vi: "một cách thú vị" }], examples: ["The time passed enjoyably."] }
+                }
+            },
+            {
+                word: "ENORMOUS",
+                hint: "Khổng lồ / To lớn",
+                diff: "Đồng nghĩa với Huge, Very large.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Enormity", vi: "sự lớn lao/sự tàn ác" }], examples: ["The enormity of the task."] },
+                    Adj: { words: [{ en: "Enormous", vi: "to lớn/khổng lồ" }], examples: ["An enormous amount of work."] },
+                    Adv: { words: [{ en: "Enormously", vi: "cực kỳ/vô cùng" }], examples: ["The quality has improved enormously."] }
+                }
+            },
+            {
+                word: "ENTER",
+                hint: "Đi vào / Nhập dữ liệu",
+                diff: "Lưu ý danh từ Entrance (lối vào) và Entry (sự đi vào/mục nhập).",
+                family: {
+                    V: { words: [{ en: "Enter", vi: "đi vào/nhập vào" }], examples: ["Enter your password."] },
+                    N: { words: [{ en: "Entrance", vi: "lối vào" }, { en: "Entry", vi: "sự đi vào/mục đăng ký" }], examples: ["The main entrance."] },
+                    Adj: [],
+                    Adv: [],
+                }
+            },
+            {
+                word: "ENTERTAIN",
+                hint: "Giải trí",
+                diff: "Dùng để mô tả việc tiếp đãi khách hoặc biểu diễn nghệ thuật.",
+                family: {
+                    V: { words: [{ en: "Entertain", vi: "giải trí/tiếp đãi" }], examples: ["He entertained us with jokes."] },
+                    N: { words: [{ en: "Entertainment", vi: "sự giải trí" }, { en: "Entertainer", vi: "người biểu diễn" }], examples: ["Popular entertainment."] },
+                    Adj: { words: [{ en: "Entertaining", vi: "thú vị/có tính giải trí" }], examples: ["An entertaining story."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "ENTHUSIASM",
+                hint: "Sự nhiệt huyết",
+                diff: "Dùng để chỉ lòng nhiệt tình say mê.",
+                family: {
+                    V: { words: [{ en: "Enthuse", vi: "tỏ ra nhiệt tình" }], examples: ["He enthused about his new job."] },
+                    N: { words: [{ en: "Enthusiasm", vi: "sự nhiệt tình" }, { en: "Enthusiast", vi: "người say mê" }], examples: ["Show great enthusiasm."] },
+                    Adj: { words: [{ en: "Enthusiastic", vi: "nhiệt tình" }], examples: ["An enthusiastic welcome."] },
+                    Adv: { words: [{ en: "Enthusiastically", vi: "một cách nhiệt tình" }], examples: ["They cheered enthusiastically."] }
+                }
+            },
+            {
+                word: "ENTIRE",
+                hint: "Toàn bộ",
+                diff: "Đồng nghĩa với Whole.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Entirety", vi: "trạng thái nguyên vẹn" }], examples: ["The decision in its entirety."] },
+                    Adj: { words: [{ en: "Entire", vi: "toàn bộ/nguyên vẹn" }], examples: ["The entire world."] },
+                    Adv: { words: [{ en: "Entirely", vi: "hoàn toàn" }], examples: ["I entirely agree with you."] }
+                }
+            },
+            {
+                word: "ENVIRONMENT",
+                hint: "Môi trường",
+                diff: "Từ vựng cực kỳ phổ biến trong các bài luận.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Environment", vi: "môi trường" }, { en: "Environmentalist", vi: "nhà môi trường học" }], examples: ["Protect the environment."] },
+                    Adj: { words: [{ en: "Environmental", vi: "thuộc về môi trường" }], examples: ["Environmental damage."] },
+                    Adv: { words: [{ en: "Environmentally", vi: "về mặt môi trường" }], examples: ["Environmentally friendly."] }
+                }
+            },
+            {
+                word: "EQUAL",
+                hint: "Công bằng / Ngang bằng",
+                diff: "Cực kỳ quan trọng để học cấu trúc 'Equality'.",
+                family: {
+                    V: { words: [{ en: "Equal", vi: "bằng/sánh kịp" }], examples: ["Two plus two equals four."] },
+                    N: { words: [{ en: "Equality", vi: "sự bình đẳng" }, { en: "Inequality", vi: "sự bất bình đẳng" }], examples: ["Gender equality."] },
+                    Adj: { words: [{ en: "Equal", vi: "ngang bằng" }, { en: "Unequal", vi: "không công bằng" }], examples: ["An equal share."] },
+                    Adv: { words: [{ en: "Equally", vi: "một cách ngang bằng" }], examples: ["Divide the cake equally."] }
+                }
+            },
+            {
+                word: "EQUIP",
+                hint: "Trang bị",
+                diff: "Dùng cho cả đồ vật hữu hình và kiến thức vô hình.",
+                family: {
+                    V: { words: [{ en: "Equip", vi: "trang bị" }], examples: ["The school is well equipped."] },
+                    N: { words: [{ en: "Equipment", vi: "thiết bị/dụng cụ" }], examples: ["Office equipment."] },
+                    Adj: { words: [{ en: "Equipped", vi: "được trang bị" }], examples: ["Fully equipped kitchen."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "ERROR",
+                hint: "Lỗi",
+                diff: "Sắc thái trang trọng hơn 'Mistake'.",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Error", vi: "lỗi/sai sót" }], examples: ["A computer error."] },
+                    Adj: { words: [{ en: "Erroneous", vi: "sai lầm" }], examples: ["Erroneous information."] },
+                    Adv: { words: [{ en: "Erroneously", vi: "một cách sai lầm" }], examples: ["Erroneously believed."] }
+                }
+            },
+            {
+                word: "ESCAPE",
+                hint: "Trốn thoát",
+                diff: "Vừa là động từ vừa là danh từ.",
+                family: {
+                    V: { words: [{ en: "Escape", vi: "trốn thoát/thoát khỏi" }], examples: ["The prisoner escaped."] },
+                    N: { words: [{ en: "Escape", vi: "sự trốn thoát/lối thoát" }], examples: ["A fire escape."] },
+                    Adj: { words: [{ en: "Escapist", vi: "có tính giải khuây/thoát ly thực tại" }], examples: ["Escapist fiction."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "ESTABLISH",
+                hint: "Thiết lập / Thành lập",
+                diff: "Dùng cho tổ chức hoặc củng cố vị thế.",
+                family: {
+                    V: { words: [{ en: "Establish", vi: "thành lập/thiết lập" }], examples: ["The company was established in 1990."] },
+                    N: { words: [{ en: "Establishment", vi: "sự thành lập/cơ sở" }], examples: ["Educational establishments."] },
+                    Adj: { words: [{ en: "Established", vi: "đã có uy tín/lâu đời" }], examples: ["An established brand."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "ESTIMATE",
+                hint: "Ước tính",
+                diff: "Lưu ý cách phát âm đuôi -ate cho V và N khác nhau.",
+                family: {
+                    V: { words: [{ en: "Estimate", vi: "ước lượng/đánh giá" }], examples: ["Estimate the cost."] },
+                    N: { words: [{ en: "Estimate", vi: "bản ước tính/sự đánh giá" }, { en: "Estimation", vi: "sự kính trọng/sự đánh giá" }], examples: ["A rough estimate."] },
+                    Adj: { words: [{ en: "Estimated", vi: "được ước tính" }], examples: ["An estimated 5,000 people."] },
+                    Adv: [],
+                }
+            },
+            {
+                word: "EVENT",
+                hint: "Sự kiện",
+                diff: "Gốc của tính từ Eventful (nhiều sự kiện đáng nhớ).",
+                family: {
+                    V: [],
+                    N: { words: [{ en: "Event", vi: "sự kiện" }], examples: ["A sporting event."] },
+                    Adj: { words: [{ en: "Eventful", vi: "có nhiều sự kiện quan trọng" }, { en: "Uneventful", vi: "tẻ nhạt/bình lặng" }], examples: ["An eventful year."] },
+                    Adv: { words: [{ en: "Eventually", vi: "cuối cùng thì" }], examples: ["He eventually escaped."] }
+                }
+            },
+            {
+                word: "EXACT",
+                hint: "Chính xác",
+                diff: "Dùng khi nói về số liệu hoặc yêu cầu khắt khe.",
+                family: {
+                    V: { words: [{ en: "Exact", vi: "đòi hỏi/ép buộc" }], examples: ["To exact revenge."] },
+                    N: { words: [{ en: "Exactness", vi: "tính chính xác" }], examples: ["Precision and exactness."] },
+                    Adj: { words: [{ en: "Exact", vi: "chính xác" }], examples: ["The exact time."] },
+                    Adv: { words: [{ en: "Exactly", vi: "một cách chính xác" }], examples: ["That's exactly what I meant."] }
+                }
+            }
+        ];
+
+        let currentIndex = -1;
+        let currentTab = 'V';
+        const synth = window.speechSynthesis;
+        let voicesList = [];
+
+        const gradients = [
+            'linear-gradient(135deg, #0f2027, #203a43, #2c5364)',
+            'linear-gradient(135deg, #141e30, #243b55, #2c3e50)',
+            'linear-gradient(135deg, #1a2a6c, #2a0845)',
+            'linear-gradient(135deg, #000428, #004e92)'
+        ];
+
+        let currentGradIdx = 0;
+        let isPrimaryActive = true;
+
+        function updateSeamlessBackground() {
+            currentGradIdx = (currentGradIdx + 1) % gradients.length;
+            const primary = document.getElementById('bg-primary');
+            const secondary = document.getElementById('bg-secondary');
+
+            if (isPrimaryActive) {
+                secondary.style.background = gradients[currentGradIdx];
+                secondary.style.opacity = '1';
+                primary.style.opacity = '0';
+            } else {
+                primary.style.background = gradients[currentGradIdx];
+                primary.style.opacity = '1';
+                secondary.style.opacity = '0';
+            }
+            isPrimaryActive = !isPrimaryActive;
+        }
+
+        function handleTabClick(type) {
+            currentTab = type;
+            renderTabData();
+        }
+
+        function renderTabData() {
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(btn => {
+                btn.classList.toggle('active', btn.innerText === currentTab);
+            });
+
+            const item = vocabData[currentIndex];
+            const content = document.getElementById('tab-content');
+            const exContent = document.getElementById('ex-content');
+
+            if (item && item.family[currentTab]) {
+                const data = item.family[currentTab];
+
+                if (!data.words || data.words.length === 0) {
+                    content.innerHTML = `<div class="no-data">Dạng từ này không phổ biến hoặc ít được sử dụng trong giao tiếp thực tế.</div>`;
+                } else {
+                    content.innerHTML = data.words.map(w => `
+                        <div class="word-item">
+                            <span class="word-en">${w.en}</span>
+                            <span class="word-vi">${w.vi}</span>
+                        </div>
+                    `).join('');
+                }
+
+                exContent.innerHTML = data.examples.map(ex => `
+                    <div class="example-item">
+                        ${ex}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function speak(text) {
+            if (synth.speaking) synth.cancel();
+            setTimeout(() => {
+                const msg = new SpeechSynthesisUtterance(text);
+                const selectedIdx = document.getElementById('voice-select').value;
+                if (voicesList[selectedIdx]) {
+                    msg.voice = voicesList[selectedIdx];
+                    msg.lang = voicesList[selectedIdx].lang;
+                }
+                msg.rate = 0.9;
+                synth.speak(msg);
+            }, 50);
+        }
+
+        function changeWord(step) {
+            currentIndex += step;
+            if (currentIndex >= vocabData.length) currentIndex = 0;
+            if (currentIndex < 0) currentIndex = vocabData.length - 1;
+
+            const item = vocabData[currentIndex];
+            document.getElementById('number').innerText = item.word;
+            document.getElementById('text-en').innerText = item.hint;
+            document.getElementById('text-vi').innerText = item.diff;
+            document.getElementById('progress').innerText = `${currentIndex + 1} / ${vocabData.length}`;
+
+            document.getElementById('info-grid').style.display = "flex";
+
+            renderTabData();
+            speak(item.word);
+        }
+
+        function loadVoices() {
+            voicesList = synth.getVoices().filter(v => v.lang.includes('en'));
+            const select = document.getElementById('voice-select');
+            if (voicesList.length > 0) {
+                const currentVal = select.value;
+                select.innerHTML = '';
+                voicesList.forEach((v, i) => {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = v.name;
+                    select.appendChild(option);
+                });
+                if (currentVal) select.value = currentVal;
+            }
+        }
+
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        window.onload = () => {
+            loadVoices();
+            document.getElementById('bg-primary').style.background = gradients[0];
+            setInterval(updateSeamlessBackground, 6000);
+
+            const stars = document.getElementById('stars-container');
+            for (let i = 0; i < 80; i++) {
+                const s = document.createElement('div');
+                s.className = 'star';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.top = Math.random() * 100 + '%';
+                s.style.width = s.style.height = (Math.random() * 1.5 + 0.5) + 'px';
+                s.style.setProperty('--d', (Math.random() * 5 + 2) + 's');
+                stars.appendChild(s);
+            }
+        };
+    </script>
+</body>
+
+</html>
