@@ -42,19 +42,12 @@
     .bio-tagline {
         font-family: 'Montserrat', sans-serif;
         font-size: 0.7rem;
-        /* Hạ size xuống một chút (0.85 -> 0.7) cho chắc ăn */
         font-weight: 400;
         color: var(--accent-gold);
         text-transform: uppercase;
         letter-spacing: 6px;
-        /* Giảm nhẹ khoảng cách (8px -> 6px) để vừa cái khung */
         text-indent: 6px;
-        /* Phải khớp với letter-spacing để cân giữa */
-
-        /* CÂU LỆNH QUAN TRỌNG NHẤT NẰM Ở ĐÂY */
         white-space: nowrap;
-        /* ÉP CHỮ NẰM TRÊN 1 DÒNG, KHÔNG CHO XUỐNG HÀNG */
-
         margin-bottom: 40px;
         opacity: 0.7;
         display: block;
@@ -91,8 +84,34 @@
         margin-bottom: 5px;
     }
 
+    /* STYLE NÚT EXPLORE PROJECTS MỚI */
+    .explore-projects-btn {
+        display: block;
+        width: 100%;
+        padding: 18px;
+        margin: 20px 0;
+        background: transparent;
+        color: var(--accent-gold);
+        border: 2px solid var(--accent-gold);
+        border-radius: 15px;
+        text-decoration: none;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-size: 0.9rem;
+        transition: all 0.4s ease;
+        text-align: center;
+    }
+
+    .explore-projects-btn:hover {
+        background: var(--accent-gold);
+        color: #000;
+        box-shadow: 0 0 30px var(--accent-gold);
+        transform: scale(1.02);
+    }
+
     .back-btn {
-        margin-top: 20px;
+        margin-top: 10px;
         display: inline-block;
         color: rgba(255, 255, 255, 0.5);
         text-decoration: none;
@@ -133,7 +152,10 @@
         </div>
     </div>
 
+    <a href="/projects" class="explore-projects-btn">
+        Case Studies & Archives
+    </a>
+
     <a href="/" class="back-btn">← Quay lại hành trình</a>
 </div>
-
-{% endblock %} ```
+{% endblock %}
