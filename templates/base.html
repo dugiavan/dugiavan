@@ -119,23 +119,22 @@
             padding-left: 5px;
         }
 
+        /* 1. Phần mô tả phụ (Tự động co giãn) */
         .sub-description {
             font-family: 'Montserrat', sans-serif;
-            /* Đổi font sang Montserrat */
             font-weight: 300;
-            /* Nét mảnh cho sang */
             text-transform: uppercase;
-            /* Viết hoa toàn bộ */
-            letter-spacing: 5px;
-            /* Giãn chữ ra thật rộng */
-            font-size: 0.8rem;
-            /* Nhỏ lại một chút */
-            margin-top: 20px;
             color: rgba(255, 255, 255, 0.7);
-            /* Làm mờ đi một tí */
+            margin-top: 20px;
+            font-size: clamp(0.6rem, 2vw, 0.8rem);
+            letter-spacing: clamp(2px, 1vw, 5px);
+            padding: 0 15px;
+            max-width: 90vw;
+            line-height: 1.6;
+            text-align: center;
         }
 
-        /* Menu xịn ở góc phải */
+        /* 2. Menu Điều hướng (Tự căn chỉnh theo màn hình) */
         nav {
             position: fixed;
             top: 20px;
@@ -143,8 +142,11 @@
             z-index: 100;
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
+        /* Style chung cho nút trong Menu */
         nav a {
             color: var(--accent-gold);
             text-decoration: none;
@@ -163,6 +165,33 @@
             color: #1a1a2e;
             box-shadow: 0 0 15px var(--accent-gold);
             transform: translateY(-2px);
+        }
+
+        /* 3. ĐẶC BIỆT: Tối ưu riêng cho Điện thoại (Android/iPhone) */
+        @media (max-width: 600px) {
+            nav {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                justify-content: center;
+                /* Menu ra giữa cho dễ bấm */
+            }
+
+            nav a {
+                padding: 6px 12px;
+                font-size: 0.75rem;
+                /* Chữ nhỏ lại cho vừa màn hình hẹp */
+            }
+
+            .sub-description {
+                letter-spacing: 2px;
+                /* Giảm giãn chữ để không bị rớt hàng xấu */
+                margin-top: 15px;
+            }
+
+            .journey-text {
+                font-size: 0.9rem;
+            }
         }
 
         .explore-btn {
@@ -264,11 +293,15 @@
             draw() { if (!this.active) return; ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x + this.len, this.y - this.len); ctx.stroke(); }
         }
 
-        for (let i = 0; i < 300; i++) stars.push(new Star());
+        // Tối ưu số lượng sao: PC 300 sao, Mobile 100 sao cho mượt
+        const starCount = window.innerWidth < 600 ? 100 : 300;
+        for (let i = 0; i < starCount; i++) stars.push(new Star());
+
         for (let i = 0; i < 2; i++) shootingStars.push(new ShootingStar());
 
         function drawConstellations() {
-            const maxDistance = 100;
+            // Mobile thì khoảng cách nối dây ngắn lại cho đỡ rối mắt
+            const maxDistance = window.innerWidth < 600 ? 60 : 100;
             for (let i = 0; i < stars.length; i++) {
                 for (let j = i + 1; j < stars.length; j++) {
                     let dx = stars[i].x - stars[j].x; let dy = stars[i].y - stars[j].y;
@@ -290,23 +323,34 @@
                 if (ml) ml.classList.add('active');
             }, 3000);
         });
-        // KHỞI TẠO QUẢ CẦU 3D SÁNG RỰC
+        // 1. Tự động tính toán kích thước dựa trên màn hình
+        const isMobile = window.innerWidth < 768;
+        const globeSize = isMobile ? window.innerWidth * 1.2 : 800; // Mobile thì lấy 120% bề ngang, PC lấy 800px
+
         const globeElement = document.getElementById('globe-container');
+
+        // 2. Khởi tạo quả cầu với biến globeSize
         const world = Globe()
             (globeElement)
-            // Thay bằng ảnh địa hình sáng hơn
             .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
             .backgroundColor('rgba(0,0,0,0)')
-            .width(800)
-            .height(800)
+            .width(globeSize)  // Thay 800 bằng globeSize
+            .height(globeSize) // Thay 800 bằng globeSize
             .showAtmosphere(true)
-            .atmosphereColor('#f1c40f') // Hào quang vàng rực rỡ
-            .atmosphereAltitude(0.25)  // Làm hào quang dày hơn cho sáng
-            .pointColor(() => '#f1c40f'); // Nếu sau này thêm điểm dữ liệu sẽ có màu vàng
+            .atmosphereColor('#f1c40f')
+            .atmosphereAltitude(isMobile ? 0.15 : 0.25) // Mobile làm hào quang mỏng lại cho đỡ lag
+            .pointColor(() => '#f1c40f');
 
         world.controls().autoRotate = true;
-        world.controls().autoRotateSpeed = 1.2; // Quay nhanh hơn tí cho sinh động
+        world.controls().autoRotateSpeed = 1.2;
         world.controls().enableZoom = false;
+
+        // 3. Thêm tính năng: Nếu xoay ngang điện thoại hoặc đổi kích thước trình duyệt thì quả cầu tự chỉnh lại
+        window.addEventListener('resize', () => {
+            const newSize = window.innerWidth < 768 ? window.innerWidth * 1.2 : 800;
+            world.width(newSize);
+            world.height(newSize);
+        });
     </script>
 </body>
 
