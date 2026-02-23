@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --glass: rgba(255, 255, 255, 0.03);
+        --glass-hover: rgba(255, 255, 255, 0.06);
+        --border: rgba(241, 196, 15, 0.15);
+        --text-dim: #a0a0a0;
+    }
+
+    body {
+        background: radial-gradient(circle at top right, #1a1a2e, #050505) !important;
+    }
+
+    .cv-wrapper {
+        max-width: 1000px;
+        margin: 60px auto;
+        padding: 20px;
+        animation: slideUp 0.8s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* HEADER */
+    .cv-header {
+        text-align: left;
+        padding: 40px;
+        background: var(--glass);
+        border: 1px solid var(--border);
+        border-radius: 30px 30px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .header-main h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: -2px;
+        background: linear-gradient(to right, #fff, var(--accent-gold));
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* ABOUT ME SECTION - Dàn hàng ngang cực đẹp */
+    .cv-intro {
+        background: rgba(15, 15, 15, 0.6);
+        padding: 40px;
+        /* Padding này phải bằng với padding của cv-sidebar và cv-main */
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        /* Đảm bảo luôn canh trái */
+    }
+
+    .about-text {
+        font-size: 1.2rem;
+        line-height: 1.8;
+        color: #ccc;
+        margin: 0;
+        display: block;
+        white-space: normal;
+        /* Ép về chuẩn, không nhận khoảng trắng dư từ code */
+    }
+
+    /* BODY LAYOUT */
+    .cv-body {
+        display: grid;
+        grid-template-columns: 1fr 2.2fr;
+        gap: 0;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        border-radius: 0 0 30px 30px;
+        overflow: hidden;
+    }
+
+    .cv-sidebar {
+        background: rgba(10, 10, 10, 0.7);
+        padding: 40px;
+        border-right: 1px solid var(--border);
+    }
+
+    /* Thêm đoạn này vào dưới .cv-sidebar của ông */
+    .cv-sidebar:hover {
+        background: rgba(20, 20, 20, 0.8);
+        /* Làm nền đậm hơn một chút */
+        border-right: 1px solid rgba(241, 196, 15, 0.4);
+        /* Làm viền vàng sáng lên */
+        transition: all 0.4s ease;
+        /* Giúp hiệu ứng mượt mà */
+    }
+
+    .cv-main {
+        background: rgba(15, 15, 15, 0.5);
+        padding: 40px;
+        backdrop-filter: blur(15px);
+    }
+
+    .section-label {
+        font-size: 0.7rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        color: var(--accent-gold);
+        margin-bottom: 30px;
+        display: block;
+        opacity: 0.8;
+    }
+
+    .section-label:hover {
+        opacity: 1;
+        /* Hiện rõ 100% không còn mờ mờ nữa */
+        color: #fff;
+        /* Đổi sang màu trắng hoặc giữ màu vàng tùy ông */
+        letter-spacing: 6px;
+        /* Chữ giãn rộng ra nhìn rất nghệ */
+        text-shadow: 0 0 10px var(--accent-gold);
+        /* Thêm hiệu ứng phát sáng */
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: default;
+    }
+
+    /* EXPERIENCE ITEM */
+    .exp-item {
+        margin-bottom: 35px;
+        margin-left: 20px;
+        padding: 25px;
+        background: var(--glass);
+        border: 1px solid transparent;
+        border-radius: 20px;
+        transition: all 0.4s ease;
+        position: relative;
+        text-align: left;
+    }
+
+    .exp-item:hover {
+        background: var(--glass-hover);
+        border-color: rgba(241, 196, 15, 0.3);
+        transform: translateX(10px);
+    }
+
+    .exp-item::before {
+        content: "";
+        position: absolute;
+        left: -25px;
+        top: 35px;
+        width: 10px;
+        height: 10px;
+        background: var(--accent-gold);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent-gold);
+        z-index: 2;
+    }
+
+    .exp-year {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--accent-gold);
+        display: block;
+    }
+
+    .exp-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 4px;
+    }
+
+    .exp-company {
+        font-size: 0.9rem;
+        color: #eee;
+        font-weight: 500;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .exp-desc {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        text-align: left;
+    }
+
+    .exp-desc li {
+        color: #bbb;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        padding-left: 20px;
+        position: relative;
+        line-height: 1.6;
+    }
+
+    .exp-desc li::before {
+        content: "⚡";
+        position: absolute;
+        left: 0;
+        color: var(--accent-gold);
+    }
+
+    /* TAGS */
+    .tag-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .tag {
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        font-size: 0.7rem;
+        color: #fff;
+        text-align: center;
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        /* THÊM DÒNG NÀY ĐỂ MƯỢT */
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: block;
+    }
+
+    /* HIỆU ỨNG HOVER CHO TAG */
+    .tag:hover {
+        background: rgba(241, 196, 15, 0.1);
+        /* Nền vàng nhạt */
+        border-color: var(--accent-gold);
+        /* Viền sáng vàng lên */
+        color: var(--accent-gold);
+        /* Chữ đổi sang vàng */
+        transform: translateY(-5px);
+        /* Bay lên một chút */
+        box-shadow: 0 5px 15px rgba(241, 196, 15, 0.2);
+        /* Đổ bóng nhẹ */
+    }
+
+    /* Hover dành riêng cho các thẻ có style màu xanh neon */
+    .tag[style*="color: #00ffcc"]:hover {
+        background: rgba(0, 255, 204, 0.1) !important;
+        border-color: #00ffcc !important;
+        color: #fff !important;
+        /* Đổi chữ sang trắng cho nổi trên nền xanh */
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+    }
+
+    .back-nav {
+        margin-top: 40px;
+        text-align: center;
+    }
+
+    .back-nav a {
+        color: var(--text-dim);
+        text-decoration: none;
+        font-size: 0.75rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+</style>
+
+<div class="cv-wrapper">
+    <div class="cv-header">
+        <div class="header-main">
+            <h1>DU GIA VĂN</h1>
+            <p style="color: var(--text-dim); margin-top: 10px; letter-spacing: 1px;">
+                dugiavan@gmail.com • Ho Chi Minh City
+            </p>
+        </div>
+        <div class="header-sub">
+            Talent Development<br>Executive Portfolio
+        </div>
+    </div>
+
+    <div class="cv-intro">
+        <span class="section-label">About Me</span>
+        <p class="about-text">Deeply rooted in the <b>Talent Development</b> pathway, I bridge the gap between human
+            potential and technology. Beyond traditional L&D, I specialize in <b>building automated tools and
+                integrating AI APIs</b> to personalize learning experiences and streamline HR workflows. I am ready to
+            deploy <b>data-driven</b> development activities that empower your organization in the AI era.</p>
+    </div>
+
+    <div class="cv-body">
+        <div class="cv-sidebar">
+            <span class="section-label">Tech Stack</span>
+            <div class="tag-container" style="margin-bottom: 60px;">
+                <div class="tag" style="border-color: rgba(0, 255, 204, 0.3); color: #00ffcc;">Python / Flask</div>
+                <div class="tag" style="border-color: rgba(0, 255, 204, 0.3); color: #00ffcc;">AI API Integration</div>
+                <div class="tag" style="border-color: rgba(0, 255, 204, 0.3); color: #00ffcc;">Automation Tools</div>
+            </div>
+
+            <span class="section-label">Certificates</span>
+            <div class="tag-container">
+                <a href="#" class="tag">Microsoft Achievements</a>
+                <a href="#" class="tag">Virtual Training Master</a>
+                <a href="#" class="tag">Action Learning Foundations</a>
+            </div>
+        </div>
+
+        <div class="cv-main">
+            <span class="section-label">Professional Experience</span>
+
+            <div class="exp-item">
+                <span class="exp-year">Feb 2021 — Jun 2022</span>
+                <div class="exp-title">Marketing Skills Development Executive</div>
+                <span class="exp-company">British American Tobacco</span>
+                <ul class="exp-desc">
+                    <li><b>Sales Force Training:</b> Conducted professional training programs for the Sales Force.</li>
+                    <li><b>Learning Management System (LMS):</b> Planning LMS execution and strategy for Sales teams.
+                    </li>
+                    <li><b>Internal Communication:</b> Designed and released high-impact Sales Force monthly
+                        newsletters.</li>
+                </ul>
+            </div>
+
+            <div class="exp-item">
+                <span class="exp-year">Feb 2019 — Jan 2020</span>
+                <div class="exp-title">Talent Development Executive</div>
+                <span class="exp-company">beGroup JCS</span>
+                <ul class="exp-desc">
+                    <li><b>Learning Culture:</b> Built and scaled an innovative learning culture within beGroup.</li>
+                    <li><b>Competency Framework:</b> Led the project of building Leadership & Professional Competency
+                        Frameworks using <b>RACI matrix</b>.</li>
+                    <li><b>LMS Platform:</b> Built and managed the internal learning platform (<b>Docebo</b>).</li>
+                    <li><b>Performance Management:</b> Built and conducted continuous performance management systems
+                        based on <b>OKR</b>.</li>
+                </ul>
+            </div>
+
+            <div class="exp-item">
+                <span class="exp-year">Sep 2017 — Feb 2019</span>
+                <div class="exp-title">Training Coordinator</div>
+                <span class="exp-company">Premier Village Phu Quoc Resort</span>
+                <ul class="exp-desc">
+                    <li><b>Training Operations:</b> Conducted Brand Training for <b>Accor Live Limitless</b>,
+                        legal-compulsory programs, and external training sessions.</li>
+                    <li><b>Reporting:</b> Consolidated and analyzed complex functional training reports for management.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="exp-item">
+                <span class="exp-year">Sep 2016 — Mar 2017</span>
+                <div class="exp-title">Talent & Culture Intern</div>
+                <span class="exp-company">Sofitel Saigon Plaza</span>
+                <ul class="exp-desc">
+                    <li><b>Training Logistics:</b> Supported the Training Manager in high-level training organization
+                        and logistics.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="back-nav">
+        <a href="/projects">← Back to Projects Portfolio</a>
+    </div>
+</div>
+{% endblock %}
