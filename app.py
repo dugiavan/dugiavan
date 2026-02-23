@@ -54,6 +54,11 @@ def word_family():
 def cv():
     return render_template('cv.html')
 
+import os
+
 # 4. Chạy ứng dụng
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Render sẽ cấp một cổng (PORT) ngẫu nhiên, mình phải lấy nó ra
+    port = int(os.environ.get("PORT", 5000))
+    # Host '0.0.0.0' cực kỳ quan trọng để Render có thể "nhìn" thấy app
+    app.run(host='0.0.0.0', port=port)
