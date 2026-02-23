@@ -15,11 +15,12 @@
     /* TIÊU ĐỀ KIỂU MINIMALIST */
     .dashboard-header {
         text-align: center;
-        padding: 50px 0;
+        padding: clamp(30px, 8vw, 60px) 20px;
     }
 
     .dashboard-header h1 {
-        font-size: 2.2rem;
+        font-size: clamp(1.5rem, 6vw, 2.2rem);
+        /* Tự nhỏ lại trên Android */
         font-weight: 800;
         color: #fff;
         letter-spacing: -1px;
@@ -35,59 +36,49 @@
         text-transform: uppercase;
         letter-spacing: 2px;
         border: 1px solid rgba(241, 196, 15, 0.2);
-
-        /* THÊM 2 DÒNG NÀY */
         display: inline-block;
-        /* Bắt buộc có dòng này thì margin mới ăn */
         margin-bottom: 15px;
-        /* Tăng số này nếu muốn thưa hơn nữa */
     }
 
-    /* CONTAINER DẠNG GRID SANG TRỌNG */
+    /* CONTAINER DẠNG GRID - Đã sửa lỗi tràn màn hình */
     .english-container {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-        gap: 30px;
+        /* SỬA TẠI ĐÂY: Dùng 100% cho mobile và 380px cho Laptop */
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+        gap: 20px;
+        /* Giảm gap trên mobile */
         max-width: 1300px;
         margin: 0 auto;
-        padding: 0 20px 100px;
+        padding: 0 15px 100px;
     }
 
     /* CARD THEO PHONG CÁCH ANIQ UI */
     .premium-card {
-        /* 1. Nền xám đen sâu, không phải đen kịt */
         background: #111111;
-
-        /* 2. Viền siêu mảnh và mờ (đặc trưng của UI hiện đại) */
         border: 1px solid rgba(255, 255, 255, 0.05);
-
         border-radius: 20px;
         padding: 20px;
         transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
         position: relative;
-
-        /* 3. Đổ bóng mềm hơn */
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
     }
 
-    .premium-card:hover {
-        /* Khi hover, viền sáng lên một chút nhưng vẫn giữ độ mờ */
-        border-color: rgba(255, 255, 255, 0.15);
-        transform: translateY(-5px);
-        background: #151515;
-        /* Nền sáng lên cực nhẹ */
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    /* Chỉ hover trên máy tính */
+    @media (hover: hover) {
+        .premium-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px);
+            background: #151515;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
     }
 
-    /* THANH ĐIỀU HƯỚNG GIẢ LẬP TRÊN ĐẦU CARD */
     .card-top-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 15px;
         padding-bottom: 10px;
-
-        /* ĐỔI Ở ĐÂY: Dùng màu trắng mờ để nó tự tiệp vào nền #111111 */
         border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     }
 
@@ -103,32 +94,15 @@
         background: #1f1f23;
     }
 
-    .premium-card:hover .dot:nth-child(1) {
-        background: #ff5f56;
-    }
-
-    .premium-card:hover .dot:nth-child(2) {
-        background: #ffbd2e;
-    }
-
-    .premium-card:hover .dot:nth-child(3) {
-        background: #27c93f;
-    }
-
     /* NỘI DUNG IFRAME */
     iframe {
         width: 100%;
-        /* Thay vì dùng height cố định 350px, ta dùng tỷ lệ 16:9 hoặc 16:10 */
         aspect-ratio: 16 / 9;
         height: auto;
-        /* Để chiều cao tự tính toán theo chiều ngang của card */
-
         border-radius: 12px;
         border: 1px solid #151518;
         background: #fff;
         transition: 0.4s;
-
-        /* Đảm bảo nội dung app không bị méo khi co giãn */
         object-fit: contain;
     }
 
@@ -148,19 +122,13 @@
     .btn-launch {
         margin-top: 20px;
         display: flex;
-
-        /* 1. ĐỔI DÒNG NÀY: Từ space-between thành center */
         justify-content: center;
-
-        align-items: center;
-
-        /* 2. THÊM DÒNG NÀY: Để chữ và mũi tên có khoảng cách nhỏ */
         gap: 10px;
-
         background: #121215;
         border: 1px solid #1f1f23;
         color: #fff;
-        padding: 10px 15px;
+        padding: 12px 15px;
+        /* Tăng padding xíu cho dễ bấm trên cảm ứng */
         border-radius: 10px;
         text-decoration: none;
         font-size: 0.75rem;
@@ -171,6 +139,21 @@
         background: #fff;
         color: #000;
         border-color: #fff;
+    }
+
+    /* FIX CHO MOBILE CỰC NHỎ */
+    @media (max-width: 480px) {
+        .dashboard-header {
+            padding: 30px 10px;
+        }
+
+        .premium-card {
+            padding: 15px;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+        }
     }
 </style>
 
